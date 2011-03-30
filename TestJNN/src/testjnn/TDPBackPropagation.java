@@ -28,7 +28,13 @@ public class TDPBackPropagation extends BackPropagation {
    private int previousEpoch = this.getCurrentIteration();
 
    private static final double DISCOUNT_RATE = 6;
-   private static final double a[] = {0.5, 0.8, 1.2, 1.5};
+   private static final double a[] = {0.5, 0.8, 1.2, 2};
+
+   public int c1 = 0;
+   public int c2 = 0;
+   public int c3 = 0;
+   public int c4 = 0;
+   public int cplus;
 
    private double sigma = 1;
 
@@ -55,17 +61,25 @@ public class TDPBackPropagation extends BackPropagation {
                  - previousOutput[outputIndex];
 
          double k;
+         if (deltaO>0)
+                 cplus++;
          if(deltaT * deltaO > 0){
-            if(Math.abs(deltaT) > sigma){
+            if(Math.abs(deltaT) / previousDesiredOutput[outputIndex] > 0.01){
+//            if(Math.abs(deltaT) > sigma){
                k = a[0];
+               c1++;
             }else{
                k = a[1];
+               c2++;
             }
          }else{
-            if(Math.abs(deltaT) <= sigma){
+            if(Math.abs(deltaT) / previousDesiredOutput[outputIndex] <= 0.01){
+            //if(Math.abs(deltaT) <= sigma){
                k = a[2];
+               c3++;
             }else{
                k = a[3];
+               c4++;
             }
          }
          return k * w;

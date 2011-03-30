@@ -51,7 +51,7 @@ public class Main {
               NNET_HIDDEN_LAYER, NNET_OUTPUT_LAYER);
       //nnet.setLearningRule(new MomentumBackpropagation());
       nnet.setLearningRule(new TDPBackPropagation());
-      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0.9);
+      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
       ((LMS) nnet.getLearningRule()).setLearningRate(0.25);
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
@@ -102,22 +102,22 @@ public class Main {
       }
 
       double errors[] = new double[testSet.trainingElements().size()];
+      double targets[] = new double[testSet.trainingElements().size()];
       for(int i = 0; i < testSet.trainingElements().size(); i++){
          nnet.setInput(testSet.trainingElements().get(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
-         //System.out.println("Input: " + Arrays.toString(
-           //      testSet.trainingElements().get(i).getInput()));
          double v1 = days.get(N_LEARN+NNET_INPUT_LAYER+i).getClose();
          double v2 = Normalize.denormalize(networkOutput[0], min, max,
                     MIN_RANGE, MAX_RANGE);
          errors[i] = (Math.abs(v1 - v2) / v1 );
-         //System.out.println("Output (" + v1
-           //      + "): " + v2 + " ("+ errors[i] +")");
+         targets[i] = v1;
       }
       DescriptiveStatistics ds = new DescriptiveStatistics(errors);
       System.out.println("Errore medio: "+ ds.getMean());
-      System.out.println("Varianza: "+ ds.getVariance());
+      ds = new DescriptiveStatistics(targets);
+      double stdDeviation = ds.getStandardDeviation();
+      System.out.println("Deviazione standard: "+ stdDeviation);
 
       // test profitto
       double stocks = 0;
@@ -126,7 +126,7 @@ public class Main {
       int nextSign;
       double todayVal = 0;
       
-      for(int i = 0; i < 20; i++){
+      for(int i = 0; i < 260; i++){
          nnet.setInput(testSet.trainingElements().get(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
@@ -134,23 +134,37 @@ public class Main {
                  .getInput()[NNET_INPUT_LAYER-1];
          // TODO segno uguale a zero??
          // calcolo della previsione
-         nextSign = (int)Math.signum(networkOutput[0] - todayVal);
-         // decisione
-         if(currentSign == -1 && nextSign == 1){
-            stocks = seed / Normalize.denormalize(todayVal, min, max,
-                    MIN_RANGE, MAX_RANGE);
-            seed = 0;
-            currentSign = 1;
-         }else if(currentSign == 1 && nextSign == -1){
-            seed = stocks * Normalize.denormalize(todayVal, min, max,
-                    MIN_RANGE, MAX_RANGE);
-            stocks = 0;
-            currentSign = -1;
+         double diff = Normalize.denormalize(networkOutput[0], min, max,
+                 MIN_RANGE, MAX_RANGE) - Normalize.denormalize(todayVal, min,
+                 max, MIN_RANGE, MAX_RANGE);
+         if(Math.abs(diff)/Normalize.denormalize(todayVal, min,
+                 max, MIN_RANGE, MAX_RANGE) > 0.01){
+            nextSign = (int)Math.signum(diff);
+            // decisione
+            if(currentSign == -1 && nextSign == 1){
+               stocks = seed / Normalize.denormalize(todayVal, min, max,
+                       MIN_RANGE, MAX_RANGE);
+               System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
+                       " compra "+ stocks +" azioni per "+ seed + "$.");
+               seed = 0;
+               currentSign = 1;
+            }else if(currentSign == 1 && nextSign == -1){
+               seed = stocks * Normalize.denormalize(todayVal, min, max,
+                       MIN_RANGE, MAX_RANGE);
+               System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
+                       " vendi "+ stocks +" azioni per "+ seed + "$.");
+               stocks = 0;
+               currentSign = -1;
+            }
          }
       }
 
       System.out.println("Ricavo finale: " + (seed + stocks *
               Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));
-
+      System.out.println("c1: "+((TDPBackPropagation)nnet.getLearningRule()).c1);
+      System.out.println("c2: "+((TDPBackPropagation)nnet.getLearningRule()).c2);
+      System.out.println("c3: "+((TDPBackPropagation)nnet.getLearningRule()).c3);
+      System.out.println("c4: "+((TDPBackPropagation)nnet.getLearningRule()).c4);
+      System.out.println("cplus: "+((TDPBackPropagation)nnet.getLearningRule()).cplus);
    }
 }
