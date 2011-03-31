@@ -15,12 +15,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- *
+ * classe contenente i metodi di utilità per la scrittura e la lettura di file
+ * CSV
  * @author Marco Tinacci
  */
 public class CSVHandler {
 
-
+   /**
+    * metodo che scrive i dati contenuti in array, ad ogni riga di array
+    * corrisponde una riga del file CSV
+    * @param array valori da scrivere
+    * @param fileName nome del file CSV (se esiste lo sovrascrive)
+    * @throws FileNotFoundException
+    * @throws IOException
+    */
    static public void writeArray(double[][] array, String fileName)
            throws FileNotFoundException, IOException{
       BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
@@ -67,7 +75,7 @@ public class CSVHandler {
          day.setHigh(Float.parseFloat(raw[2]));       // high
          day.setLow(Float.parseFloat(raw[3]));        // low
          day.setClose(Float.parseFloat(raw[4]));      // close
-         day.setVolume(Integer.parseInt(raw[5]));     // volume
+         day.setVolume(Long.parseLong(raw[5]));       // volume
          day.setAdjClose(Float.parseFloat(raw[6]));   // adj close
 
          // aggiungi record alla lista, invertendo l'ordine

@@ -10,13 +10,13 @@ public class DayBean {
 
    private Date date;
    private float open, high, low, close, adjClose;
-   private int volume;
+   private long volume;
 
    public DayBean() {
    }
 
    public DayBean(Date date, float open, float high, float low, float close,
-           float adjClose, int volume) {
+           float adjClose, long volume) {
       this.date = date;
       this.open = open;
       this.high = high;
@@ -56,7 +56,7 @@ public class DayBean {
       hash = 23 * hash + Float.floatToIntBits(this.low);
       hash = 23 * hash + Float.floatToIntBits(this.close);
       hash = 23 * hash + Float.floatToIntBits(this.adjClose);
-      hash = 23 * hash + this.volume;
+      hash = 23 * hash + (int)this.volume;
       return hash;
    }
 
@@ -68,7 +68,7 @@ public class DayBean {
               Float.toString(low) + ", " +
               Float.toString(close) + ", " +
               Float.toString(adjClose) + ", " +
-              Integer.toString(volume) + " ]";
+              Long.toString(volume) + " ]";
    }
    
    /**
@@ -158,14 +158,14 @@ public class DayBean {
    /**
     * @return the volume
     */
-   public int getVolume() {
+   public long getVolume() {
       return volume;
    }
 
    /**
     * @param volume the volume to set
     */
-   public void setVolume(int volume) {
+   public void setVolume(long volume) {
       this.volume = volume;
    }
 

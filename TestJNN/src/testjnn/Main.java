@@ -33,15 +33,18 @@ public class Main {
    static private final int NNET_HIDDEN_LAYER = 30;
    static private final int NNET_OUTPUT_LAYER = 1;
 
+   //
    static private final double MIN_RANGE = 0.1;
    static private final double MAX_RANGE = 0.9;
+
+   static private final String INDEX_FILE = "SP500";
 
    /**
     * @param args the command line arguments
     */
    public static void main(String[] args) throws Exception {
       Main main = new Main();
-      List<DayBean> list = CSVHandler.readAll("data/MIB.csv");
+      List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE + ".csv");
       //System.out.println(list.toString().replace("], [", "]\n["));
       main.testNN(list);
 
@@ -54,7 +57,7 @@ public class Main {
       nnet.setLearningRule(new MomentumBackpropagation());
       //nnet.setLearningRule(new TDPBackPropagation());
       ((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
-      ((LMS) nnet.getLearningRule()).setLearningRate(0.25);
+      ((LMS) nnet.getLearningRule()).setLearningRate(0.1);
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
 
@@ -130,7 +133,7 @@ public class Main {
 
       double v_days[] = new double[260];
       double v_values[] = new double[260];
-      double v_outputs[] = new double[260];
+      double v_targets[] = new double[260];
 
       for(int i = 0; i < 260; i++){
          
@@ -164,19 +167,17 @@ public class Main {
                stocks = 0;
                currentSign = -1;
             }
-         v_days[i] = N_LEARN+NNET_INPUT_LAYER+i;
+         v_days[i] = N_LEARN + NNET_INPUT_LAYER + i;
          v_values[i] = seed;
-         v_outputs[i] = networkOutput[0];
+         v_targets[i] = Normalize.denormalize(networkOutput[0], min, max, MIN_RANGE, MAX_RANGE);
 //         }
       }
 
       double v[][] = new double[3][];
       v[0] = v_days;
       v[1] = v_values;
-      v[2] = v_outputs;
-      CSVHandler.writeArray(v, "data/result1.csv");
-      
-
+      v[2] = v_targets;
+      CSVHandler.writeArray(v, "data/result_"+INDEX_FILE+".csv");
 
       System.out.println("Ricavo finale: " + (seed + stocks *
               Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));

@@ -5,13 +5,9 @@
 
 package testjnn;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
-import org.neuroph.core.Connection;
 import org.neuroph.core.Neuron;
 import org.neuroph.core.learning.SupervisedTrainingElement;
-import org.neuroph.core.learning.TrainingElement;
 import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.core.transfer.TransferFunction;
 import org.neuroph.nnet.learning.BackPropagation;
@@ -28,7 +24,7 @@ public class TDPBackPropagation extends BackPropagation {
    private int previousEpoch = this.getCurrentIteration();
 
    private static final double DISCOUNT_RATE = 6;
-   private static final double a[] = {0.5, 0.8, 1.2, 2};
+   private static final double a[] = {0.5, 0.8, 1.2, 1.5};
 
    public int c1 = 0;
    public int c2 = 0;
