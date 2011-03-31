@@ -51,9 +51,9 @@ public class Main {
       // creazione della rete neurale
       NeuralNetwork nnet = new MultiLayerPerceptron(NNET_INPUT_LAYER,
               NNET_HIDDEN_LAYER, NNET_OUTPUT_LAYER);
-      //nnet.setLearningRule(new MomentumBackpropagation());
-      nnet.setLearningRule(new TDPBackPropagation());
-      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
+      nnet.setLearningRule(new MomentumBackpropagation());
+      //nnet.setLearningRule(new TDPBackPropagation());
+      ((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
       ((LMS) nnet.getLearningRule()).setLearningRate(0.25);
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
@@ -175,13 +175,15 @@ public class Main {
       v[1] = v_values;
       v[2] = v_outputs;
       CSVHandler.writeArray(v, "data/result1.csv");
+      
+
 
       System.out.println("Ricavo finale: " + (seed + stocks *
               Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));
-      System.out.println("c1: "+((TDPBackPropagation)nnet.getLearningRule()).c1);
-      System.out.println("c2: "+((TDPBackPropagation)nnet.getLearningRule()).c2);
-      System.out.println("c3: "+((TDPBackPropagation)nnet.getLearningRule()).c3);
-      System.out.println("c4: "+((TDPBackPropagation)nnet.getLearningRule()).c4);
-      System.out.println("cplus: "+((TDPBackPropagation)nnet.getLearningRule()).cplus);
+//      System.out.println("c1: "+((TDPBackPropagation)nnet.getLearningRule()).c1);
+//      System.out.println("c2: "+((TDPBackPropagation)nnet.getLearningRule()).c2);
+//      System.out.println("c3: "+((TDPBackPropagation)nnet.getLearningRule()).c3);
+//      System.out.println("c4: "+((TDPBackPropagation)nnet.getLearningRule()).c4);
+//      System.out.println("cplus: "+((TDPBackPropagation)nnet.getLearningRule()).cplus);
    }
 }

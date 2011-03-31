@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,9 +25,10 @@ public class CSVHandler {
            throws FileNotFoundException, IOException{
       BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
       for(int i = 0; i < array.length; i++){
-         bw.write(array[i].toString().replaceAll("[", "")
-                 .replaceAll("]", "\n"));
+         bw.write(Arrays.toString(array[i]).replaceAll("\\[","")
+                 .replaceAll("\\]", ";\n"));
       }
+      bw.close();
    }
 
    /**
