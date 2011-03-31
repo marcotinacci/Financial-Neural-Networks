@@ -4,6 +4,8 @@
 package testjnn;
 
 import beans.DayBean;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
@@ -15,7 +17,7 @@ import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.LMS;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
-import utils.CSVReader;
+import utils.CSVHandler;
 import utils.Normalize;
 
 /**
@@ -39,13 +41,13 @@ public class Main {
     */
    public static void main(String[] args) throws Exception {
       Main main = new Main();
-      List<DayBean> list = CSVReader.readAll("/Users/Markov/Desktop/MIB.csv");
+      List<DayBean> list = CSVHandler.readAll("data/MIB.csv");
       //System.out.println(list.toString().replace("], [", "]\n["));
       main.testNN(list);
 
    }
 
-   public void testNN(List<DayBean> days) {
+   public void testNN(List<DayBean> days) throws FileNotFoundException, IOException {
       // creazione della rete neurale
       NeuralNetwork nnet = new MultiLayerPerceptron(NNET_INPUT_LAYER,
               NNET_HIDDEN_LAYER, NNET_OUTPUT_LAYER);
@@ -125,8 +127,13 @@ public class Main {
       int currentSign = -1; // {-1, +1}
       int nextSign;
       double todayVal = 0;
-      
+
+      double v_days[] = new double[260];
+      double v_values[] = new double[260];
+      double v_outputs[] = new double[260];
+
       for(int i = 0; i < 260; i++){
+         
          nnet.setInput(testSet.trainingElements().get(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
@@ -137,15 +144,16 @@ public class Main {
          double diff = Normalize.denormalize(networkOutput[0], min, max,
                  MIN_RANGE, MAX_RANGE) - Normalize.denormalize(todayVal, min,
                  max, MIN_RANGE, MAX_RANGE);
-         if(Math.abs(diff)/Normalize.denormalize(todayVal, min,
-                 max, MIN_RANGE, MAX_RANGE) > 0.01){
+//         if(Math.abs(diff)/Normalize.denormalize(todayVal, min,
+  //               max, MIN_RANGE, MAX_RANGE) > 0.01){
             nextSign = (int)Math.signum(diff);
             // decisione
             if(currentSign == -1 && nextSign == 1){
                stocks = seed / Normalize.denormalize(todayVal, min, max,
                        MIN_RANGE, MAX_RANGE);
-               System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
-                       " compra "+ stocks +" azioni per "+ seed + "$.");
+               //System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
+               //        " compra "+ stocks +" azioni per "+ seed + "$.");
+
                seed = 0;
                currentSign = 1;
             }else if(currentSign == 1 && nextSign == -1){
@@ -156,8 +164,17 @@ public class Main {
                stocks = 0;
                currentSign = -1;
             }
-         }
+         v_days[i] = N_LEARN+NNET_INPUT_LAYER+i;
+         v_values[i] = seed;
+         v_outputs[i] = networkOutput[0];
+//         }
       }
+
+      double v[][] = new double[3][];
+      v[0] = v_days;
+      v[1] = v_values;
+      v[2] = v_outputs;
+      CSVHandler.writeArray(v, "data/result1.csv");
 
       System.out.println("Ricavo finale: " + (seed + stocks *
               Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));

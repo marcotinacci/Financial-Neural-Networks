@@ -2,8 +2,10 @@ package utils;
 
 import beans.DayBean;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -15,7 +17,18 @@ import java.util.List;
  *
  * @author Marco Tinacci
  */
-public class CSVReader {
+public class CSVHandler {
+
+
+   static public void writeArray(double[][] array, String fileName)
+           throws FileNotFoundException, IOException{
+      BufferedWriter bw = new BufferedWriter(new FileWriter(fileName));
+      for(int i = 0; i < array.length; i++){
+         bw.write(array[i].toString().replaceAll("[", "")
+                 .replaceAll("]", "\n"));
+      }
+   }
+
    /**
     * metodo che legge i dati contenuti nel file CSV specificato e ritorna una
     * lista di record incapsulati
