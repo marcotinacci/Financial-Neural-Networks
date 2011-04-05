@@ -6,9 +6,7 @@ package testjnn;
 import beans.DayBean;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Vector;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.learning.SupervisedTrainingElement;
@@ -33,11 +31,12 @@ public class Main {
    static private final int NNET_HIDDEN_LAYER = 30;
    static private final int NNET_OUTPUT_LAYER = 1;
 
-   //
+   // range di normalizzazione
    static private final double MIN_RANGE = 0.1;
    static private final double MAX_RANGE = 0.9;
 
-   static private final String INDEX_FILE = "SP500";
+   // nome dell'indice da utilizzare (nella cartella "data/")
+   static private final String INDEX_FILE = "MIB";
 
    /**
     * @param args the command line arguments
@@ -54,9 +53,9 @@ public class Main {
       // creazione della rete neurale
       NeuralNetwork nnet = new MultiLayerPerceptron(NNET_INPUT_LAYER,
               NNET_HIDDEN_LAYER, NNET_OUTPUT_LAYER);
-      nnet.setLearningRule(new MomentumBackpropagation());
-      //nnet.setLearningRule(new TDPBackPropagation());
-      ((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
+      //nnet.setLearningRule(new MomentumBackpropagation());
+      nnet.setLearningRule(new TDPBackPropagation());
+      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0.9);
       ((LMS) nnet.getLearningRule()).setLearningRate(0.1);
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
@@ -177,7 +176,7 @@ public class Main {
       v[0] = v_days;
       v[1] = v_values;
       v[2] = v_targets;
-      CSVHandler.writeArray(v, "data/result_"+INDEX_FILE+".csv");
+      CSVHandler.writeArray(v, "data/result_" + INDEX_FILE + ".csv");
 
       System.out.println("Ricavo finale: " + (seed + stocks *
               Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));

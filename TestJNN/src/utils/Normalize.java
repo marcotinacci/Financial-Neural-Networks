@@ -46,7 +46,7 @@ public class Normalize {
     */
    static public double denormalize(double val, double min, double max,
            double minRange, double maxRange){
-      return (val + minRange) / (maxRange - minRange) * (max - min) + min;
+      return (val - minRange) / (maxRange - minRange) * (max - min) + min;
    }
 
    /**
