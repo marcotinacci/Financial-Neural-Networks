@@ -6,6 +6,7 @@ package testjnn;
 import beans.DayBean;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.neuroph.core.NeuralNetwork;
@@ -15,6 +16,13 @@ import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.LMS;
 import org.neuroph.nnet.learning.MomentumBackpropagation;
+import umontreal.iro.lecuyer.rng.AntitheticStream;
+import umontreal.iro.lecuyer.rng.LFSR258;
+import umontreal.iro.lecuyer.rng.MRG32k3a;
+import umontreal.iro.lecuyer.rng.RandomStream;
+import umontreal.iro.lecuyer.rng.WELL1024;
+import umontreal.iro.lecuyer.stochprocess.BrownianMotion;
+import umontreal.iro.lecuyer.stochprocess.GeometricBrownianMotion;
 import utils.CSVHandler;
 import utils.Normalize;
 
@@ -36,7 +44,7 @@ public class Main {
    static private final double MAX_RANGE = 0.9;
 
    // nome dell'indice da utilizzare (nella cartella "data/")
-   static private final String INDEX_FILE = "MIB";
+   static private final String INDEX_FILE = "NASDAQ100";
 
    /**
     * @param args the command line arguments
@@ -45,8 +53,23 @@ public class Main {
       Main main = new Main();
       List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE + ".csv");
       //System.out.println(list.toString().replace("], [", "]\n["));
-      main.testNN(list);
+      //main.testNN(list);
+      /*
+      long[] seed = new long[6];
+      for(int i = 0; i < 3; i++){
+         seed[i] = (long)(Math.random() * 4294967087d);
+      }
+      for(int i = 0; i < 3; i++){
+         seed[i+3] = (long)(Math.random() * 4294944443d);
+      }
+      MRG32k3a.setPackageSeed(seed);
 
+      MRG32k3a rs = new MRG32k3a();
+      BrownianMotion gbm = new BrownianMotion(1, 1, 1, rs);
+      gbm.setObservationTimes(1, 10);
+      System.out.println("moto browniano geometrico: " + Arrays.toString(gbm.generatePath()));
+       * 
+       */
    }
 
    public void testNN(List<DayBean> days) throws FileNotFoundException, IOException {
@@ -55,7 +78,7 @@ public class Main {
               NNET_HIDDEN_LAYER, NNET_OUTPUT_LAYER);
       //nnet.setLearningRule(new MomentumBackpropagation());
       nnet.setLearningRule(new TDPBackPropagation());
-      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0.9);
+      //((MomentumBackpropagation) nnet.getLearningRule()).setMomentum(0);
       ((LMS) nnet.getLearningRule()).setLearningRate(0.1);
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
@@ -114,7 +137,7 @@ public class Main {
          double v1 = days.get(N_LEARN+NNET_INPUT_LAYER+i).getClose();
          double v2 = Normalize.denormalize(networkOutput[0], min, max,
                     MIN_RANGE, MAX_RANGE);
-         errors[i] = (Math.abs(v1 - v2) / v1 );
+         errors[i] = (Math.abs(v1 - v2) / v1);
          targets[i] = v1;
       }
       DescriptiveStatistics ds = new DescriptiveStatistics(errors);
