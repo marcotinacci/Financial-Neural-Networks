@@ -4,6 +4,7 @@
 package testjnn;
 
 import beans.DayBean;
+import com.sun.tools.javac.util.Pair;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,28 +16,26 @@ import org.neuroph.core.learning.TrainingElement;
 import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.LMS;
-import org.neuroph.nnet.learning.MomentumBackpropagation;
-import umontreal.iro.lecuyer.rng.AntitheticStream;
-import umontreal.iro.lecuyer.rng.LFSR258;
 import umontreal.iro.lecuyer.rng.MRG32k3a;
-import umontreal.iro.lecuyer.rng.RandomStream;
-import umontreal.iro.lecuyer.rng.WELL1024;
 import umontreal.iro.lecuyer.stochprocess.BrownianMotion;
-import umontreal.iro.lecuyer.stochprocess.GeometricBrownianMotion;
 import utils.CSVHandler;
 import utils.Normalize;
+import com.tictactec.ta.lib.Core;
+import com.tictactec.ta.lib.MAType;
+import com.tictactec.ta.lib.MInteger;
+import utils.Financial;
 
 /**
  *
  * @author Marco Tinacci
  */
 public class Main {
-   static private final int N_LEARN = 1500;
+   static private final int N_LEARN = 1000;
    static private final int N_TEST = 350;
 
    // dimensioni rete
-   static private final int NNET_INPUT_LAYER = 30;
-   static private final int NNET_HIDDEN_LAYER = 30;
+   static private final int NNET_INPUT_LAYER = 5;
+   static private final int NNET_HIDDEN_LAYER = 10;
    static private final int NNET_OUTPUT_LAYER = 1;
 
    // range di normalizzazione
@@ -46,6 +45,11 @@ public class Main {
    // nome dell'indice da utilizzare (nella cartella "data/")
    static private final String INDEX_FILE = "NASDAQ100";
 
+   static private final int EMA_STEP = 5;
+
+   // istanza della libreria ta-lib
+   private Core financialLib = new Core();
+
    /**
     * @param args the command line arguments
     */
@@ -53,8 +57,10 @@ public class Main {
       Main main = new Main();
       List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE + ".csv");
       //System.out.println(list.toString().replace("], [", "]\n["));
-      //main.testNN(list);
+      main.testNN(list);
+      
       /*
+       * corpo procedura generazione moti browniani
       long[] seed = new long[6];
       for(int i = 0; i < 3; i++){
          seed[i] = (long)(Math.random() * 4294967087d);
@@ -65,11 +71,11 @@ public class Main {
       MRG32k3a.setPackageSeed(seed);
 
       MRG32k3a rs = new MRG32k3a();
-      BrownianMotion gbm = new BrownianMotion(1, 1, 1, rs);
-      gbm.setObservationTimes(1, 10);
-      System.out.println("moto browniano geometrico: " + Arrays.toString(gbm.generatePath()));
-       * 
-       */
+      BrownianMotion bm = new BrownianMotion(1, 1, 1, rs);
+      bm.setObservationTimes(1, 10);
+      System.out.println("moto browniano: " + Arrays.toString(bm.generatePath()));
+      */
+
    }
 
    public void testNN(List<DayBean> days) throws FileNotFoundException, IOException {
@@ -83,69 +89,52 @@ public class Main {
       ((LMS) nnet.getLearningRule()).setMaxError(0.0001);
       ((LMS) nnet.getLearningRule()).setMaxIterations(1000);
 
-      double max = 0;
-      double min = Double.MAX_VALUE;
-      for(int i = 0; i < N_LEARN; i++){
-         double x = days.get(i).getClose();
-         if(x < min){
-            min = x;
-         }
-         if(x > max){
-            max = x;
-         }
-      }
-
+      Pair<Double, Double> minmax = getMinMax(days);
+      double min = minmax.fst;
+      double max = minmax.snd;
       
       // creazione dell'insieme di dati di addestramento
-      TrainingSet trainSet = new TrainingSet();
-      // ciclo su training sets
-      for(int i = 0; i < N_LEARN; i++){
-         double v[] = new double[NNET_INPUT_LAYER];
-         // ciclo sul singolo input
-         for(int j = 0; j < NNET_INPUT_LAYER; j++){
-            v[j] = Normalize.normalize(days.get(i+j).getClose(), min, max,
-                    MIN_RANGE, MAX_RANGE);
-         }
-         // aggiungi l'input e l'output
-         trainSet.addElement(new SupervisedTrainingElement(
-            v, new double[]{
-                  Normalize.normalize(days.get(i+NNET_INPUT_LAYER).getClose(), 
-                          min, max, MIN_RANGE, MAX_RANGE)})
-         );
-      }
+      TrainingSet trainSet = EMASet(days, 0, N_LEARN, min, max);
 
       // addestramento della rete
       nnet.learnInSameThread(trainSet);
 
       // test errore
-      TrainingSet testSet = new TrainingSet();
-      for(int i = 0; i < N_TEST; i++){
-         double v[] = new double[NNET_INPUT_LAYER];
-         for(int j = 0; j < NNET_INPUT_LAYER; j++){
-            v[j] = Normalize.normalize(days.get(N_LEARN+i+j).getClose(), min,
-                    max, MIN_RANGE, MAX_RANGE);
-         }
-         testSet.addElement(new TrainingElement(v));
-      }
+      double v_days[] = new double[N_TEST];
+      double v_values[] = new double[N_TEST];
+      double v_targets[] = new double[N_TEST];
 
-      double errors[] = new double[testSet.trainingElements().size()];
-      double targets[] = new double[testSet.trainingElements().size()];
-      for(int i = 0; i < testSet.trainingElements().size(); i++){
-         nnet.setInput(testSet.trainingElements().get(i).getInput());
+      double errors[] = new double[N_TEST];
+      double targets[] = new double[N_TEST];
+      TrainingSet testSet = EMASet(days, N_LEARN, N_TEST, min, max);
+      for(int i = 0; i < testSet.size(); i++){
+         nnet.setInput(testSet.elementAt(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
-         double v1 = days.get(N_LEARN+NNET_INPUT_LAYER+i).getClose();
+         double v1 = days.get(N_LEARN+(NNET_INPUT_LAYER-1)*EMA_STEP+i).getClose();
          double v2 = Normalize.denormalize(networkOutput[0], min, max,
                     MIN_RANGE, MAX_RANGE);
          errors[i] = (Math.abs(v1 - v2) / v1);
          targets[i] = v1;
+         
+         v_days[i] = N_LEARN+(NNET_INPUT_LAYER-1)*EMA_STEP+i;
+         v_values[i] = 0;
+         v_targets[i] = v2;
       }
+
       DescriptiveStatistics ds = new DescriptiveStatistics(errors);
       System.out.println("Errore medio: "+ ds.getMean());
       ds = new DescriptiveStatistics(targets);
       double stdDeviation = ds.getStandardDeviation();
       System.out.println("Deviazione standard: "+ stdDeviation);
 
+      double v[][] = new double[3][];
+      v[0] = v_days;
+      v[1] = v_values;
+      v[2] = v_targets;
+      CSVHandler.writeArray(v, "data/result_" + INDEX_FILE + ".csv");
+
+      /*
       // test profitto
       double stocks = 0;
       double seed = 1000000;
@@ -159,11 +148,11 @@ public class Main {
 
       for(int i = 0; i < 260; i++){
          
-         nnet.setInput(testSet.trainingElements().get(i).getInput());
+//         nnet.setInput(testSet.trainingElements().get(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
-         todayVal = testSet.trainingElements().get(i)
-                 .getInput()[NNET_INPUT_LAYER-1];
+//         todayVal = testSet.trainingElements().get(i)
+//                 .getInput()[NNET_INPUT_LAYER-1];
          // TODO segno uguale a zero??
          // calcolo della previsione
          double diff = Normalize.denormalize(networkOutput[0], min, max,
@@ -183,7 +172,7 @@ public class Main {
                currentSign = 1;
             }else if(currentSign == 1 && nextSign == -1){
                seed = stocks * Normalize.denormalize(todayVal, min, max,
-                       MIN_RANGE, MAX_RANGE);
+                     MIN_RANGE, MAX_RANGE);
                System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
                        " vendi "+ stocks +" azioni per "+ seed + "$.");
                stocks = 0;
@@ -208,5 +197,105 @@ public class Main {
 //      System.out.println("c3: "+((TDPBackPropagation)nnet.getLearningRule()).c3);
 //      System.out.println("c4: "+((TDPBackPropagation)nnet.getLearningRule()).c4);
 //      System.out.println("cplus: "+((TDPBackPropagation)nnet.getLearningRule()).cplus);
+ */
+   }
+
+   private TrainingSet standardSet(List<DayBean> days, double min, double max){
+      TrainingSet trainSet = new TrainingSet();
+
+      // ciclo su training sets
+      for(int i = 0; i < N_LEARN; i++){
+         double v[] = new double[NNET_INPUT_LAYER];
+         // ciclo sul singolo input
+         for(int j = 0; j < NNET_INPUT_LAYER; j++){
+            v[j] = Normalize.normalize(days.get(i+j).getClose(), min, max,
+                    MIN_RANGE, MAX_RANGE);
+         }
+         // aggiungi l'input e l'output
+         trainSet.addElement(new SupervisedTrainingElement(
+            v, new double[]{
+                  Normalize.normalize(days.get(i+NNET_INPUT_LAYER).getClose(),
+                          min, max, MIN_RANGE, MAX_RANGE)})
+         );
+      }
+      return trainSet;
+   }
+
+   private TrainingSet EMASet(List<DayBean> days, int begin, int nel,
+           double min, double max){
+      TrainingSet trainSet = new TrainingSet();
+      // crea il vettore di calori di chiusura
+      double closeVals[] = new double[nel];
+      for(int i = 0; i < nel; i++){
+         closeVals[i] = Normalize.normalize(days.get(begin+i).getClose(), min, 
+                 max, MIN_RANGE, MAX_RANGE);
+      }
+
+      double valsEMA[][] = new double[NNET_INPUT_LAYER-1][];
+      for(int i = 0; i < NNET_INPUT_LAYER-1; i++){
+         valsEMA[i] = Financial.EMA(closeVals, EMA_STEP*(i+1));
+      }
+
+      for(int i = 0; i < nel - ((NNET_INPUT_LAYER-1) * EMA_STEP) ; i++){
+         double v[] = new double[NNET_INPUT_LAYER];
+         int idx = i + (NNET_INPUT_LAYER-1) * EMA_STEP-1;
+         v[0] = closeVals[idx];
+         for(int j = 1; j < NNET_INPUT_LAYER; j++){
+            v[j] = valsEMA[j-1][idx];
+         }
+
+         // aggiungi l'input e l'output
+         trainSet.addElement(new SupervisedTrainingElement(
+            v, new double[]{closeVals[idx+1]})
+         );
+      }
+
+      return trainSet;
+   }
+/*
+   private TrainingSet EMASet(List<DayBean> days, double min, double max){
+      TrainingSet trainSet = new TrainingSet();
+      // crea il vettore di calori di chiusura
+      double closeVals[] = new double[N_LEARN];
+      for(int i = 0; i < N_LEARN; i++){
+         closeVals[i] = Normalize.normalize(days.get(i).getClose(), min, max,
+                 MIN_RANGE, MAX_RANGE);
+      }
+
+      double valsEMA[][] = new double[NNET_INPUT_LAYER-1][];
+      for(int i = 0; i < NNET_INPUT_LAYER-1; i++){
+         valsEMA[i] = Financial.EMA(closeVals, EMA_STEP*(i+1));
+      }
+
+      for(int i = 0; i < N_LEARN - ((NNET_INPUT_LAYER-1) * EMA_STEP) ; i++){
+         double v[] = new double[NNET_INPUT_LAYER];
+         int idx = i + (NNET_INPUT_LAYER-1) * EMA_STEP-1;
+         v[0] = closeVals[idx];
+         for(int j = 1; j < NNET_INPUT_LAYER; j++){
+            v[j] = valsEMA[j-1][idx];
+         }
+
+         // aggiungi l'input e l'output
+         trainSet.addElement(new SupervisedTrainingElement(
+            v, new double[]{closeVals[idx+1]})
+         );
+      }
+
+      return trainSet;
+   }
+   */
+   private Pair<Double, Double> getMinMax(List<DayBean> days){
+      double max = 0;
+      double min = Double.MAX_VALUE;
+      for(int i = 0; i < N_LEARN; i++){
+         double x = days.get(i).getClose();
+         if(x < min){
+            min = x;
+         }
+         if(x > max){
+            max = x;
+         }
+      }
+      return new Pair<Double, Double>(min, max);
    }
 }

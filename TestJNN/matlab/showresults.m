@@ -11,9 +11,9 @@ function showresults(financial_index)
     result=importdata(['../data/result_',financial_index,'.csv']);
     result=result';
     newplot;
-    plot(result(:,3));
+    plot(result(1:329,3));
     hold all;
-    plot(data(1531:1791,4));
+    plot(data(1020:1349,4));
     legend('Risultati Simulazione','Dati Reali');
     title('Andamento delle azioni');
 end
