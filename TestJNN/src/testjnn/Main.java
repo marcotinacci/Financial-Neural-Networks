@@ -4,7 +4,7 @@
 package testjnn;
 
 import beans.DayBean;
-import com.sun.tools.javac.util.Pair;
+import utils.Pair;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
