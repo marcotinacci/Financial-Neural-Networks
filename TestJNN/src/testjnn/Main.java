@@ -7,22 +7,15 @@ import beans.DayBean;
 import utils.Pair;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.neuroph.core.NeuralNetwork;
 import org.neuroph.core.learning.SupervisedTrainingElement;
-import org.neuroph.core.learning.TrainingElement;
 import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.LMS;
-import umontreal.iro.lecuyer.rng.MRG32k3a;
-import umontreal.iro.lecuyer.stochprocess.BrownianMotion;
 import utils.CSVHandler;
 import utils.Normalize;
-import com.tictactec.ta.lib.Core;
-import com.tictactec.ta.lib.MAType;
-import com.tictactec.ta.lib.MInteger;
 import utils.Financial;
 
 /**
@@ -46,9 +39,6 @@ public class Main {
    static private final String INDEX_FILE = "NASDAQ100";
 
    static private final int EMA_STEP = 5;
-
-   // istanza della libreria ta-lib
-   private Core financialLib = new Core();
 
    /**
     * @param args the command line arguments

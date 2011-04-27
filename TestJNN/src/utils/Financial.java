@@ -41,6 +41,23 @@ public class Financial {
       return vout;
    }
 
+
+   //RSI = 100 * U / (U + D) dove
+   //U = media delle chiusure al rialzo di X giorni
+   //D = media delle chiusure al ribasso di X giorni
+
+   static public double[] RSI(double[] vin, int timePer){
+      double[] vout = new double[vin.length];
+
+      for(int i = 0; i < timePer-1; i++){
+         vout[i] = Double.NaN;
+      }
+
+
+
+      return null;
+   }
+
    //static public int Mean(double[] vin, int begin, int nel){
    //
    //}
