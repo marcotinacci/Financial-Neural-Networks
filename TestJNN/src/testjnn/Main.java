@@ -23,12 +23,12 @@ import utils.Financial;
  * @author Marco Tinacci
  */
 public class Main {
-   static private final int N_LEARN = 1000;
+   static private final int N_LEARN = 5850;
    static private final int N_TEST = 350;
 
    // dimensioni rete
-   static private final int NNET_INPUT_LAYER = 5;
-   static private final int NNET_HIDDEN_LAYER = 10;
+   static private final int NNET_INPUT_LAYER = 6;
+   static private final int NNET_HIDDEN_LAYER = 12;
    static private final int NNET_OUTPUT_LAYER = 1;
 
    // range di normalizzazione
@@ -36,7 +36,7 @@ public class Main {
    static private final double MAX_RANGE = 0.9;
 
    // nome dell'indice da utilizzare (nella cartella "data/")
-   static private final String INDEX_FILE = "";
+   static private final String INDEX_FILE = "SP500";
 
    static private final int EMA_STEP = 5;
    static private final int EMA_NAN_EL=(NNET_INPUT_LAYER-1) * EMA_STEP;
@@ -87,30 +87,30 @@ public class Main {
       double max = minmax.snd;
       
       // creazione dell'insieme di dati di addestramento
-      TrainingSet trainSet = EMASet(days, 0, N_LEARN, min, max);
+      TrainingSet trainSet = EMARSISet(days, 0, N_LEARN, min, max);
 
       // addestramento della rete
       nnet.learnInSameThread(trainSet);
 
       // test errore
-      double v_days[] = new double[N_TEST-EMA_NAN_EL];
-      double v_values[] = new double[N_TEST-EMA_NAN_EL];
-      double v_targets[] = new double[N_TEST-EMA_NAN_EL];
+      double v_days[] = new double[N_TEST-RSI_NAN_EL];
+      double v_values[] = new double[N_TEST-RSI_NAN_EL];
+      double v_targets[] = new double[N_TEST-RSI_NAN_EL];
 
       double errors[] = new double[N_TEST];
       double targets[] = new double[N_TEST];
-      TrainingSet testSet = EMASet(days, N_LEARN, N_TEST, min, max);
+      TrainingSet testSet = EMARSISet(days, N_LEARN, N_TEST, min, max);
       for(int i = 0; i < testSet.size(); i++){
          nnet.setInput(testSet.elementAt(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
-         double v1 = days.get(N_LEARN+EMA_NAN_EL+i).getClose();
+         double v1 = days.get(N_LEARN+RSI_NAN_EL+i).getClose();
          double v2 = Normalize.denormalize(networkOutput[0], min, max,
                     MIN_RANGE, MAX_RANGE);
          errors[i] = (Math.abs(v1 - v2) / v1);
          targets[i] = v1;
          
-         v_days[i] = N_LEARN+EMA_NAN_EL+i;
+         v_days[i] = N_LEARN+RSI_NAN_EL+i;
          v_values[i] = 0;
          v_targets[i] = v2;
       }
