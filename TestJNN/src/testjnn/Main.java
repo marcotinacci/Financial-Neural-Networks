@@ -23,7 +23,7 @@ import utils.Financial;
  * @author Marco Tinacci
  */
 public class Main {
-   static private final int N_LEARN = 5850;
+   static private final int N_LEARN = 1000;
    static private final int N_TEST = 350;
 
    // dimensioni rete
