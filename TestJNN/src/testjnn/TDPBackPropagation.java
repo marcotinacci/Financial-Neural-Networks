@@ -95,7 +95,8 @@ public class TDPBackPropagation extends BackPropagation {
 
       DescriptiveStatistics ds = new DescriptiveStatistics(targetList);
       sigma = ds.getStandardDeviation();
-      System.out.println("Sigma: "+sigma);
+      // TODO: togliere i calcoli di sigma
+      //System.out.println("Sigma: "+sigma);
    }
 
    @Override
