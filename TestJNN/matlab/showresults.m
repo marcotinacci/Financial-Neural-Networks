@@ -1,4 +1,13 @@
-function showresults(financial_index)
+function showresults(financial_index, strategy, learning_rule)
+% SHOWRESULTS
+%
+% Parametri
+%
+% financial_index: SP500, NASDAQ100, NIKKEI225, MIB
+% strategy: std, ema, rsi
+% learning_rule: Backpropagation, TDPBackpropagation, 
+%   MomentumBackpropagation
+%
 
     % Import the file
     newData1 = importdata(['../data/',financial_index,'.csv']);
@@ -8,12 +17,29 @@ function showresults(financial_index)
     end
     data=vars{1};
     data=flipud(data);
-    result=importdata(['../data/result_',financial_index,'.csv']);
+    result=importdata(['../data/result_',financial_index,'_',strategy, ...
+        '_',learning_rule,'.csv']);
     result=result';
-    newplot;
-    plot(result(1:329,3));
+    
+    n_test = 350;
+    n_learn = 1000;
+    
+    % calcolo numero elementi NaN
+    n_nan = 0;
+    switch strategy
+        case 'std'
+            n_nan = 29;
+        case 'ema'
+            n_nan = 20;
+        case 'rsi'
+            n_nan = 20;
+    end
+    
+    % stampa dei risultati
+    figure;
     hold all;
-    plot(data(1020:1349,4));
-    legend('Risultati Simulazione','Dati Reali');
-    title('Andamento delle azioni');
+    plot(result(1 : n_test - n_nan, 3));
+    plot(data(n_learn + n_nan + 1 : n_learn + n_test, 4));
+    legend('Previsioni simulazione','Dati reali');
+    title([financial_index,' ',strategy,' ',learning_rule]);
 end
