@@ -42,11 +42,9 @@ public class Main {
 
       SP500, NASDAQ100, NIKKEI225, MIB
    };
-
    static private Strategy STRATEGY = Strategy.rsi;
    static private LearningRule NET_LEARNING_RULE = LearningRule.TDPBackpropagation;
-   static private Index INDEX_FILE = Index.NIKKEI225;
-   
+   static private Index INDEX_FILE = Index.MIB;
    //numero di vettori di addestramento
    static private final int N_LEARN = 1000;
    //numero di vettori di test
@@ -68,6 +66,7 @@ public class Main {
     */
    public static void main(String[] args) throws Exception {
       Main main = new Main();
+      /*
       for (Index idx : Index.values()) {
          INDEX_FILE = idx;
          List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE.name() + ".csv");
@@ -75,12 +74,15 @@ public class Main {
             STRATEGY = stg;
             for (LearningRule lr : LearningRule.values()) {
                NET_LEARNING_RULE = lr;
-               System.out.println(" - "+INDEX_FILE+", "+STRATEGY
-                       +", "+NET_LEARNING_RULE);
+               System.out.println(" - " + INDEX_FILE + ", " + STRATEGY
+                       + ", " + NET_LEARNING_RULE);
                main.testNN(list);
             }
          }
-      }
+      }*/
+
+      List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE.name() + ".csv");
+      main.testNN(list);
 
       /*
        * corpo procedura generazione moti browniani
@@ -142,7 +144,7 @@ public class Main {
 
       return nnet;
    }
-   //TODO: modificare la strategia standard per utilizzare beginIdx
+   // TODO: modificare la strategia standard per utilizzare beginIdx
 
    private TrainingSet createTrainingSet(Strategy strategy, List<DayBean> days,
            int nLearn, int beginIdx, double min, double max) {
@@ -177,11 +179,11 @@ public class Main {
 
       // test errore
       double v_days[] = new double[N_TEST - nNaN];
-      double v_values[] = new double[N_TEST - nNaN];
+      double v_output[] = new double[N_TEST - nNaN];
       double v_targets[] = new double[N_TEST - nNaN];
-
+      
       double errors[] = new double[N_TEST - nNaN];
-      double targets[] = new double[N_TEST - nNaN];
+      
 
       // intervallo su cui calcolare i parametri di normalizzazione
       Pair<Double, Double> minmaxTest = getMinMax(days, 0, N_LEARN + N_TEST);
@@ -198,11 +200,10 @@ public class Main {
                  minmaxTest.snd, MIN_RANGE, MAX_RANGE);
 
          errors[i] = (Math.abs(v1 - v2) / v1);
-         targets[i] = v1;
-
+         
          v_days[i] = N_LEARN + nNaN + i;
-         v_values[i] = 0;
-         v_targets[i] = v2;
+         v_output[i] = v2;
+         v_targets[i] = v1;
       }
 
       DescriptiveStatistics ds = new DescriptiveStatistics(errors);
@@ -210,75 +211,47 @@ public class Main {
 
       double v[][] = new double[3][];
       v[0] = v_days;
-      v[1] = v_values;
+      v[1] = v_output;
       v[2] = v_targets;
+
       CSVHandler.writeArray(v, "data/result_" + INDEX_FILE.name()
               + "_" + STRATEGY.name() + "_" + NET_LEARNING_RULE.name() + ".csv");
 
-      /*
-      // test profitto
+      evaluateProfit(v_output, v_targets);
+
+   }
+
+   private void evaluateProfit(double[] outputs, double[] targets) {
+      
       double stocks = 0;
-      double seed = 1000000;
-      int currentSign = -1; // {-1, +1}
+      double money = 1000000;
+      int position = -1; // {-1, +1}
       int nextSign;
-      double todayVal = 0;
 
-      double v_days[] = new double[260];
-      double v_values[] = new double[260];
-      double v_targets[] = new double[260];
+      for (int i = 1; i < outputs.length; i++) {
 
-      for(int i = 0; i < 260; i++){
+         double diff = outputs[i] - targets[i-1];
 
-      //         nnet.setInput(testSet.trainingElements().get(i).getInput());
-      nnet.calculate();
-      double[] networkOutput = nnet.getOutput();
-      //         todayVal = testSet.trainingElements().get(i)
-      //                 .getInput()[NNET_INPUT_LAYER-1];
-      // TODO segno uguale a zero??
-      // calcolo della previsione
-      double diff = Normalize.denormalize(networkOutput[0], min, max,
-      MIN_RANGE, MAX_RANGE) - Normalize.denormalize(todayVal, min,
-      max, MIN_RANGE, MAX_RANGE);
-      //         if(Math.abs(diff)/Normalize.denormalize(todayVal, min,
-      //               max, MIN_RANGE, MAX_RANGE) > 0.01){
-      nextSign = (int)Math.signum(diff);
-      // decisione
-      if(currentSign == -1 && nextSign == 1){
-      stocks = seed / Normalize.denormalize(todayVal, min, max,
-      MIN_RANGE, MAX_RANGE);
-      //System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
-      //        " compra "+ stocks +" azioni per "+ seed + "$.");
-
-      seed = 0;
-      currentSign = 1;
-      }else if(currentSign == 1 && nextSign == -1){
-      seed = stocks * Normalize.denormalize(todayVal, min, max,
-      MIN_RANGE, MAX_RANGE);
-      System.out.println("giorno: "+ (N_LEARN+NNET_INPUT_LAYER+i) +
-      " vendi "+ stocks +" azioni per "+ seed + "$.");
-      stocks = 0;
-      currentSign = -1;
+         //if(Math.abs(diff)/targets[i-1] > 0.01){
+         nextSign = (int) Math.signum(diff);
+         // decisione
+         if (position == -1 && nextSign == 1) {
+            stocks = money / targets[i-1];
+            System.out.println("giorno: "+ i +
+                    " compra "+ stocks +" azioni per "+ money + "$.");
+            money = 0;
+            position = 1;
+         } else if (position == 1 && nextSign == -1) {
+            money = stocks * targets[i-1];
+            System.out.println("giorno: " + i
+                    + " vendi " + stocks + " azioni per " + money + "$.");
+            stocks = 0;
+            position = -1;
+         }
       }
-      v_days[i] = N_LEARN + NNET_INPUT_LAYER + i;
-      v_values[i] = seed;
-      v_targets[i] = Normalize.denormalize(networkOutput[0], min, max, MIN_RANGE, MAX_RANGE);
-      //         }
-      }
+      System.out.println("Ricavo finale: " +
+              (money + stocks * targets[targets.length-1]));
 
-      double v[][] = new double[3][];
-      v[0] = v_days;
-      v[1] = v_values;
-      v[2] = v_targets;
-      CSVHandler.writeArray(v, "data/result_" + INDEX_FILE + ".csv");
-
-      System.out.println("Ricavo finale: " + (seed + stocks *
-      Normalize.denormalize(todayVal, min, max, MIN_RANGE, MAX_RANGE)));
-      //      System.out.println("c1: "+((TDPBackPropagation)nnet.getLearningRule()).c1);
-      //      System.out.println("c2: "+((TDPBackPropagation)nnet.getLearningRule()).c2);
-      //      System.out.println("c3: "+((TDPBackPropagation)nnet.getLearningRule()).c3);
-      //      System.out.println("c4: "+((TDPBackPropagation)nnet.getLearningRule()).c4);
-      //      System.out.println("cplus: "+((TDPBackPropagation)nnet.getLearningRule()).cplus);
-       */
    }
 
    private TrainingSet standardSet(List<DayBean> days, double min, double max, int nLearn, int beginIdx) {
@@ -311,7 +284,7 @@ public class Main {
                  max, MIN_RANGE, MAX_RANGE);
       }
 
-      double valsEMA[][] = new double[nnetInputLayer - 1][];      
+      double valsEMA[][] = new double[nnetInputLayer - 1][];
       // calcola gli EMA per ogni nodo di input dedicato
       for (int i = 0; i < nnetInputLayer - 1; i++) {
          valsEMA[i] = Financial.EMA(closeVals, EMA_STEP * (i + 1));
