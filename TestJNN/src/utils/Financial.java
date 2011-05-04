@@ -69,8 +69,6 @@ public class Financial {
         }
 
         for (int i = timePer; i < vin.length; i++) {
-            if (i==170)
-                i=i;
             closePrice.addLast(vin[i]);
             diff = closePrice.getLast() - closePrice.get(closePrice.size() - 2);
             diffPrice.addLast(diff);

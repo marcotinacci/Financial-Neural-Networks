@@ -20,7 +20,6 @@ import utils.CSVHandler;
 import utils.Normalize;
 import utils.Financial;
 
-// TODO testare l'attuale metodo RSI e EMA con i guadagni
 // TODO apprendimento incrementale
 /**
  *
@@ -82,7 +81,10 @@ public class Main {
       }*/
 
       List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE.name() + ".csv");
-      main.testNN(list);
+
+
+      NeuralNetwork nnet = main.neuralNetworkTraining(list, 0, N_LEARN);
+      main.neuralNetworkTesting(nnet, list, 0, N_LEARN, N_TEST);
 
       /*
        * corpo procedura generazione moti browniani
@@ -144,7 +146,6 @@ public class Main {
 
       return nnet;
    }
-   // TODO: modificare la strategia standard per utilizzare beginIdx
 
    private TrainingSet createTrainingSet(Strategy strategy, List<DayBean> days,
            int nLearn, int beginIdx, double min, double max) {
@@ -164,44 +165,67 @@ public class Main {
       return ts;
    }
 
-   public void testNN(List<DayBean> days)
-           throws FileNotFoundException, IOException {
+   public NeuralNetwork neuralNetworkTraining(List<DayBean> days, int beginIdx,
+           int nLearn){
       // creazione della rete neurale
       NeuralNetwork nnet = createNNet(NET_LEARNING_RULE, STRATEGY);
 
       // intervallo su cui calcolare i parametri di normalizzazione
-      Pair<Double, Double> minmaxTrain = getMinMax(days, 0, N_LEARN);
+      Pair<Double, Double> minmaxTrain = getMinMax(days, beginIdx, nLearn);
       // creazione dell'insieme di dati di addestramento
-      TrainingSet trainSet = createTrainingSet(STRATEGY, days, N_LEARN, 0,
+      TrainingSet trainSet = createTrainingSet(STRATEGY, days, nLearn, beginIdx,
               minmaxTrain.fst, minmaxTrain.snd);
       // addestramento della rete
       nnet.learnInSameThread(trainSet);
+      return nnet;
+   }
 
-      // test errore
-      double v_days[] = new double[N_TEST - nNaN];
-      double v_output[] = new double[N_TEST - nNaN];
-      double v_targets[] = new double[N_TEST - nNaN];
-      
-      double errors[] = new double[N_TEST - nNaN];
-      
+   public double incrementalOutput(NeuralNetwork nnet, List<DayBean> days,
+         int beginIdx, int nLearn)
+           throws FileNotFoundException, IOException{
 
       // intervallo su cui calcolare i parametri di normalizzazione
-      Pair<Double, Double> minmaxTest = getMinMax(days, 0, N_LEARN + N_TEST);
+      Pair<Double, Double> minmaxTest = getMinMax(days, beginIdx,
+              beginIdx + nLearn);
+
+      nnet.setInput(EMARSIElement(days, beginIdx + nLearn + 1,
+              MIN_RANGE, MIN_RANGE).getInput());
+      nnet.calculate();
+      double[] networkOutput = nnet.getOutput();
+
+      // TODO siamo rimasti qui
+      
+      return 0d;
+   }
+
+   public void neuralNetworkTesting(NeuralNetwork nnet, List<DayBean> days, 
+           int beginIdx, int nLearn, int nTest)
+           throws FileNotFoundException, IOException{
+
+      // test errore
+      double v_days[] = new double[nTest - nNaN];
+      double v_output[] = new double[nTest - nNaN];
+      double v_targets[] = new double[nTest - nNaN];
+      double errors[] = new double[nTest - nNaN];
+
+      // intervallo su cui calcolare i parametri di normalizzazione
+      Pair<Double, Double> minmaxTest = getMinMax(days, beginIdx,
+              beginIdx + nLearn + nTest);
       //crea un set per eseguire dei test
-      TrainingSet testSet = createTrainingSet(STRATEGY, days, N_TEST, N_LEARN,
-              minmaxTest.fst, minmaxTest.snd);
+      TrainingSet testSet = createTrainingSet(STRATEGY, days, nTest, 
+              beginIdx + nLearn, minmaxTest.fst, minmaxTest.snd);
 
       for (int i = 0; i < testSet.size(); i++) {
          nnet.setInput(testSet.elementAt(i).getInput());
          nnet.calculate();
          double[] networkOutput = nnet.getOutput();
-         double v1 = days.get(N_LEARN + nNaN + i).getClose();
+         double v1 = days.get(beginIdx + nLearn + nNaN + i).getClose();
          double v2 = Normalize.denormalize(networkOutput[0], minmaxTest.fst,
                  minmaxTest.snd, MIN_RANGE, MAX_RANGE);
 
          errors[i] = (Math.abs(v1 - v2) / v1);
-         
-         v_days[i] = N_LEARN + nNaN + i;
+
+         v_days[i] = beginIdx + nLearn + nNaN + i;
          v_output[i] = v2;
          v_targets[i] = v1;
       }
@@ -353,5 +377,28 @@ public class Main {
       }
 
       return trainSet;
+   }
+
+   private SupervisedTrainingElement EMARSIElement(List<DayBean> days, int idx, 
+           double min, double max){
+
+      double v[] = new double[nnetInputLayer];
+      int nel = Math.max(
+              RSI_SIZE, (int)Math.ceil((nnetInputLayer-2)*EMA_STEP*3.45));
+      double closeVals[] = new double[nel];
+      v[0] = Normalize.normalize(days.get(idx).getClose(), min,
+                 max, MIN_RANGE, MAX_RANGE);
+
+      for (int i=0; i < nel; i++){
+         closeVals[nel-i-1] = days.get(idx-i).getClose();
+      }
+
+      v[1] = Financial.RSI(closeVals, RSI_SIZE)[nel-1];
+
+      for (int i = 0; i < nnetInputLayer - 2; i++) {
+         v[i+2] = Financial.EMA(closeVals, EMA_STEP * (i + 1))[nel-1];
+      }
+      return new SupervisedTrainingElement(
+                 v, new double[]{days.get(idx + 1).getClose()});
    }
 }
