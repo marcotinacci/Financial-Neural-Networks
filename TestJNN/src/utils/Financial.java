@@ -48,10 +48,10 @@ public class Financial {
     static public double[] RSI(double[] vin, int timePer) {
 
         double[] vout = new double[vin.length];                         //vettore di ritorno
-        LinkedList<Double> closePrice = new LinkedList();      //prezzi di chiusura
-        LinkedList<Double> diffPrice = new LinkedList();        //differenze di prezzo dal giorno precedente
-        LinkedList<Double> advance = new LinkedList();        //differenze positive
-        LinkedList<Double> decline = new LinkedList();          //valore assoluto delle differenze negative
+        LinkedList<Double> closePrice = new LinkedList<Double>();      //prezzi di chiusura
+        LinkedList<Double> diffPrice = new LinkedList<Double>();        //differenze di prezzo dal giorno precedente
+        LinkedList<Double> advance = new LinkedList<Double>();        //differenze positive
+        LinkedList<Double> decline = new LinkedList<Double>();          //valore assoluto delle differenze negative
 
         double diff;
         for (int i = 0; i < timePer; i++) {
@@ -111,7 +111,4 @@ public class Financial {
 
         return vout;
     }
-    //static public int Mean(double[] vin, int begin, int nel){
-    //
-    //}
 }

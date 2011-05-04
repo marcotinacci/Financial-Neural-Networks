@@ -43,7 +43,7 @@ public class Main {
    };
    static private Strategy STRATEGY = Strategy.rsi;
    static private LearningRule NET_LEARNING_RULE = LearningRule.TDPBackpropagation;
-   static private Index INDEX_FILE = Index.MIB;
+   static private Index INDEX_FILE = Index.SP500;
    //numero di vettori di addestramento
    static private final int N_LEARN = 1000;
    //numero di vettori di test
@@ -92,9 +92,14 @@ public class Main {
          NeuralNetwork nnet = main.neuralNetworkTraining(days, 1000, i+100+1000);
          forecasts[i] = main.incrementalOutput(nnet, days, 1000, i+100+1000);
          closes[i] = days.get(i+1000+100).getClose();
+        System.out.println("Giorno "+(i+1)+" di 150");
       }
       main.evaluateProfit(forecasts, closes);
-
+      double[][] v = new double[2][];
+      v[0]=closes;
+      v[1]=forecasts;
+      CSVHandler.writeArray(v, "data/result_incremental_" + INDEX_FILE.name()
+              + "_" + STRATEGY.name() + "_" + NET_LEARNING_RULE.name() + ".csv");
       /*
        * corpo procedura generazione moti browniani
       long[] seed = new long[6];
@@ -201,7 +206,7 @@ public class Main {
               EMARSIElement(days, todayIdx, minmax.fst, minmax.snd).getInput());
       nnet.calculate();
       return Normalize.denormalize(nnet.getOutput()[0], minmax.fst, minmax.snd,
-              MIN_RANGE, MIN_RANGE);
+              MIN_RANGE, MAX_RANGE);
    }
 
    public void neuralNetworkTesting(NeuralNetwork nnet, List<DayBean> days, 
@@ -257,26 +262,30 @@ public class Main {
       double money = 1000000;
       int position = -1; // {-1, +1}
       int nextSign;
+      double stopLossPerc=0.02;
+      double lastPrice=0;
 
       for (int i = 0; i < tomorrowForecasts.length; i++) {
 
          double diff = tomorrowForecasts[i] - todayCloses[i];
 
-         //if(Math.abs(diff)/targets[i-1] > 0.01){
+         //TODO: if(Math.abs(diff)/todayCloses[i] > 0.01){
          nextSign = (int) Math.signum(diff);
          // decisione
-         if (position == -1 && nextSign == 1) {
+         if (position == -1 && (nextSign == 1|| todayCloses[i]>lastPrice+lastPrice*stopLossPerc)) {
             stocks = money / todayCloses[i];
             System.out.println("giorno: "+ i +
                     " compra "+ stocks +" azioni per "+ money + "$.");
             money = 0;
             position = 1;
-         } else if (position == 1 && nextSign == -1) {
+            lastPrice=todayCloses[i];
+         } else if (position == 1 && (nextSign == -1 || todayCloses[i]<lastPrice-lastPrice*stopLossPerc)) {
             money = stocks * todayCloses[i];
             System.out.println("giorno: " + i
                     + " vendi " + stocks + " azioni per " + money + "$.");
             stocks = 0;
             position = -1;
+             lastPrice=todayCloses[i];
          }
       }
       System.out.println("Ricavo finale: " +
@@ -395,9 +404,9 @@ public class Main {
       double closeVals[] = new double[nel];
       v[0] = Normalize.normalize(days.get(todayIdx).getClose(), min,
                  max, MIN_RANGE, MAX_RANGE);
-
       for (int i=0; i < nel; i++){
-         closeVals[nel-i-1] = days.get(todayIdx-i).getClose();
+         closeVals[nel-i-1] = Normalize.normalize(
+                 days.get(todayIdx-i).getClose(), min, max, MIN_RANGE, MAX_RANGE); //days.get(todayIdx-i).getClose();
       }
 
       v[1] = Financial.RSI(closeVals, RSI_SIZE)[nel-1];
@@ -406,6 +415,8 @@ public class Main {
          v[i+2] = Financial.EMA(closeVals, EMA_STEP * (i + 1))[nel-1];
       }
       return new SupervisedTrainingElement(
-                 v, new double[]{days.get(todayIdx + 1).getClose()});
+                 v, new double[]{Normalize.normalize(
+                 days.get(todayIdx+1).getClose(), min, max, MIN_RANGE, MAX_RANGE)});
+                     //days.get(todayIdx + 1).getClose()});
    }
 }
