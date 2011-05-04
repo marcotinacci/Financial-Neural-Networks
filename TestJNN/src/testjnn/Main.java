@@ -80,11 +80,20 @@ public class Main {
          }
       }*/
 
-      List<DayBean> list = CSVHandler.readAll("data/" + INDEX_FILE.name() + ".csv");
+      List<DayBean> days = CSVHandler.readAll("data/" + INDEX_FILE.name() + ".csv");
 
 
-      NeuralNetwork nnet = main.neuralNetworkTraining(list, 0, N_LEARN);
-      main.neuralNetworkTesting(nnet, list, 0, N_LEARN, N_TEST);
+      //NeuralNetwork nnet = main.neuralNetworkTraining(list, 0, ??? indice);
+      //main.neuralNetworkTesting(nnet, list, 0, N_LEARN, N_TEST);
+
+      double[] forecasts = new double[150];
+      double[] closes = new double[150];
+      for(int i=0; i < 150; i++){
+         NeuralNetwork nnet = main.neuralNetworkTraining(days, 1000, i+100+1000);
+         forecasts[i] = main.incrementalOutput(nnet, days, 1000, i+100+1000);
+         closes[i] = days.get(i+1000+100).getClose();
+      }
+      main.evaluateProfit(forecasts, closes);
 
       /*
        * corpo procedura generazione moti browniani
@@ -166,36 +175,33 @@ public class Main {
    }
 
    public NeuralNetwork neuralNetworkTraining(List<DayBean> days, int beginIdx,
-           int nLearn){
+           int todayIdx){
       // creazione della rete neurale
       NeuralNetwork nnet = createNNet(NET_LEARNING_RULE, STRATEGY);
 
       // intervallo su cui calcolare i parametri di normalizzazione
-      Pair<Double, Double> minmaxTrain = getMinMax(days, beginIdx, nLearn);
+      Pair<Double, Double> minmaxTrain = getMinMax(days, beginIdx,
+              todayIdx - beginIdx);
       // creazione dell'insieme di dati di addestramento
-      TrainingSet trainSet = createTrainingSet(STRATEGY, days, nLearn, beginIdx,
-              minmaxTrain.fst, minmaxTrain.snd);
+      TrainingSet trainSet = createTrainingSet(STRATEGY, days, 
+              todayIdx - beginIdx, beginIdx, minmaxTrain.fst, minmaxTrain.snd);
       // addestramento della rete
       nnet.learnInSameThread(trainSet);
       return nnet;
    }
 
    public double incrementalOutput(NeuralNetwork nnet, List<DayBean> days,
-         int beginIdx, int nLearn)
+         int beginIdx, int todayIdx)
            throws FileNotFoundException, IOException{
 
       // intervallo su cui calcolare i parametri di normalizzazione
-      Pair<Double, Double> minmaxTest = getMinMax(days, beginIdx,
-              beginIdx + nLearn);
+      Pair<Double, Double> minmax = getMinMax(days, beginIdx, todayIdx - beginIdx);
 
-      nnet.setInput(EMARSIElement(days, beginIdx + nLearn + 1,
-              MIN_RANGE, MIN_RANGE).getInput());
+      nnet.setInput(
+              EMARSIElement(days, todayIdx, minmax.fst, minmax.snd).getInput());
       nnet.calculate();
-      double[] networkOutput = nnet.getOutput();
-
-      // TODO siamo rimasti qui
-      
-      return 0d;
+      return Normalize.denormalize(nnet.getOutput()[0], minmax.fst, minmax.snd,
+              MIN_RANGE, MIN_RANGE);
    }
 
    public void neuralNetworkTesting(NeuralNetwork nnet, List<DayBean> days, 
@@ -245,28 +251,28 @@ public class Main {
 
    }
 
-   private void evaluateProfit(double[] outputs, double[] targets) {
+   private void evaluateProfit(double[] tomorrowForecasts, double[] todayCloses) {
       
       double stocks = 0;
       double money = 1000000;
       int position = -1; // {-1, +1}
       int nextSign;
 
-      for (int i = 1; i < outputs.length; i++) {
+      for (int i = 0; i < tomorrowForecasts.length; i++) {
 
-         double diff = outputs[i] - targets[i-1];
+         double diff = tomorrowForecasts[i] - todayCloses[i];
 
          //if(Math.abs(diff)/targets[i-1] > 0.01){
          nextSign = (int) Math.signum(diff);
          // decisione
          if (position == -1 && nextSign == 1) {
-            stocks = money / targets[i-1];
+            stocks = money / todayCloses[i];
             System.out.println("giorno: "+ i +
                     " compra "+ stocks +" azioni per "+ money + "$.");
             money = 0;
             position = 1;
          } else if (position == 1 && nextSign == -1) {
-            money = stocks * targets[i-1];
+            money = stocks * todayCloses[i];
             System.out.println("giorno: " + i
                     + " vendi " + stocks + " azioni per " + money + "$.");
             stocks = 0;
@@ -274,7 +280,7 @@ public class Main {
          }
       }
       System.out.println("Ricavo finale: " +
-              (money + stocks * targets[targets.length-1]));
+              (money + stocks * todayCloses[todayCloses.length-1]));
 
    }
 
@@ -379,18 +385,19 @@ public class Main {
       return trainSet;
    }
 
-   private SupervisedTrainingElement EMARSIElement(List<DayBean> days, int idx, 
-           double min, double max){
+
+   private SupervisedTrainingElement EMARSIElement(List<DayBean> days, 
+           int todayIdx, double min, double max){
 
       double v[] = new double[nnetInputLayer];
       int nel = Math.max(
               RSI_SIZE, (int)Math.ceil((nnetInputLayer-2)*EMA_STEP*3.45));
       double closeVals[] = new double[nel];
-      v[0] = Normalize.normalize(days.get(idx).getClose(), min,
+      v[0] = Normalize.normalize(days.get(todayIdx).getClose(), min,
                  max, MIN_RANGE, MAX_RANGE);
 
       for (int i=0; i < nel; i++){
-         closeVals[nel-i-1] = days.get(idx-i).getClose();
+         closeVals[nel-i-1] = days.get(todayIdx-i).getClose();
       }
 
       v[1] = Financial.RSI(closeVals, RSI_SIZE)[nel-1];
@@ -399,6 +406,6 @@ public class Main {
          v[i+2] = Financial.EMA(closeVals, EMA_STEP * (i + 1))[nel-1];
       }
       return new SupervisedTrainingElement(
-                 v, new double[]{days.get(idx + 1).getClose()});
+                 v, new double[]{days.get(todayIdx + 1).getClose()});
    }
 }
