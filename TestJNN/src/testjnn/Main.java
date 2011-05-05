@@ -406,7 +406,7 @@ public class Main {
                  max, MIN_RANGE, MAX_RANGE);
       for (int i=0; i < nel; i++){
          closeVals[nel-i-1] = Normalize.normalize(
-                 days.get(todayIdx-i).getClose(), min, max, MIN_RANGE, MAX_RANGE); //days.get(todayIdx-i).getClose();
+                 days.get(todayIdx-i).getClose(), min, max, MIN_RANGE, MAX_RANGE);
       }
 
       v[1] = Financial.RSI(closeVals, RSI_SIZE)[nel-1];
@@ -417,6 +417,5 @@ public class Main {
       return new SupervisedTrainingElement(
                  v, new double[]{Normalize.normalize(
                  days.get(todayIdx+1).getClose(), min, max, MIN_RANGE, MAX_RANGE)});
-                     //days.get(todayIdx + 1).getClose()});
    }
 }
