@@ -13,7 +13,6 @@ import org.neuroph.nnet.learning.MomentumBackpropagation;
 import strategies.*;
 import utils.CSVHandler;
 
-// TODO apprendimento incrementale
 /**
  *
  * @author Marco Tinacci
@@ -37,9 +36,15 @@ public class Main {
     static private Strategy STRATEGY = Strategy.rsi;
     static private LearningRule NET_LEARNING_RULE = LearningRule.TDPBackpropagation;
     static private Index INDEX_FILE = Index.SP500;
+    // giorno iniziale di addestramento
     static private final int TRAIN_START = 1000;
+    // numero minimo di giorni di addestramento
     static private final int NTRAIN = 100;
     static private final int NTEST = 50;
+
+
+    // TODO: incapsulare procedura di valutazione del profitto tornando un vettore di azioni
+    // TODO: stampare nel CSV anche i profitti
 
     /**
      * @param args the command line arguments
@@ -81,27 +86,38 @@ public class Main {
         ((LMS) lr).setMaxError(0.0001);
         ((LMS) lr).setMaxIterations(1000);
 
-
         double[] forecasts = new double[NTEST];
         double[] closes = new double[NTEST];
 
         StrategyAbstract strat = new EMAStrategy(days, lr);
 
+        // per ogni giorno di test
         for (int i = 0; i < NTEST; i++) {
-            NeuralNetwork nnet = strat.getTrainedNeuralNetwork(TRAIN_START, i + TRAIN_START + NTRAIN);
-            nnet.setInput(strat.getTestElement(i + TRAIN_START + NTRAIN).getInput());
-            nnet.calculate();
-            forecasts[i] = strat.getDenormalizedClose(nnet.getOutput()[0]);
-            closes[i] = days.get(i + TRAIN_START + NTRAIN).getClose();
-            System.out.println("Giorno " + (i + 1) + " di " + NTEST);
+           // crea una rete addestrata fino al giorno i (relativo)
+           NeuralNetwork nnet = strat.getTrainedNeuralNetwork(TRAIN_START, i + TRAIN_START + NTRAIN);
+           // inserisci l'input per la previsione del giorno successivo
+           nnet.setInput(strat.getTestElement(i + TRAIN_START + NTRAIN).getInput());
+           // calcola l'output
+           nnet.calculate();
+           // estrai e denormalizza l'i-esimo output di previsione
+           forecasts[i] = strat.getDenormalizedClose(nnet.getOutput()[0]);
+           // estrai l'effettivo valore della chiusura dell'i+1-esima giornata
+           closes[i] = days.get(i + TRAIN_START + NTRAIN).getClose();
+           // stampa la previsione fatta il giorno i (per la chiusura del giorno i+1)
+           System.out.println("Giorno " + (i + 1) + " di " + NTEST);
         }
+        // simula la valutazione del profitto finale con la nostra strategia decisionale
         main.evaluateProfit(forecasts, closes);
         double[][] v = new double[2][];
+        // vettore delle chiusure reali
         v[0] = closes;
+        // vettore delle previsioni
         v[1] = forecasts;
+        // stampa su file CSV le previsioni incrementali e i valori reali
         CSVHandler.writeArray(v, "data/result_incremental_" + INDEX_FILE.name()
                 + "_" + STRATEGY.name() + "_" + NET_LEARNING_RULE.name() + ".csv");
 
+        // calcola l'errore commesso come media degli errori relativi commessi a ogni chiusura
         double[] errors = new double[NTEST];
         for (int i = 0; i < NTEST; i++) {
             errors[i] = Math.abs(forecasts[i] - closes[i]) / closes[i];
@@ -128,18 +144,28 @@ public class Main {
 
     }
 
+    /**
+     * Valuta il profitto applicando una strategia decisionale di acquisto e
+     * vendita totali su crescita e decrescita del valore dell'azione oltre una
+     * certa soglia.
+     * Il metodo stampa su terminale le decisioni e i profitti.
+     * @param tomorrowForecasts vettore dei valori delle previsioni
+     * @param todayCloses vettore dei valori target reali
+     */
     private void evaluateProfit(double[] tomorrowForecasts, double[] todayCloses) {
 
+        // numero di azioni possedute
         double stocks = 0;
+        // capitale iniziale
         double money = 1000000;
         int position = -1; // {-1, +1}
         int nextSign;
+        // soglia di decisione
         double stopLossPerc = 0.02;
         double lastPrice = 0;
 
         for (int i = 0; i < tomorrowForecasts.length; i++) {
             double diff = tomorrowForecasts[i] - todayCloses[i];
-            //TODO: if(Math.abs(diff)/todayCloses[i] > 0.01){
             nextSign = (int) Math.signum(diff);
             // decisione
             if (position == -1 && (nextSign == 1 || todayCloses[i] > lastPrice + lastPrice * stopLossPerc)) {

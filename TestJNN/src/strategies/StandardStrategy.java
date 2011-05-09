@@ -42,7 +42,6 @@ public class StandardStrategy extends StrategyAbstract {
                     v, new double[]{normalizedDays.get(i + getNnetInputLayer())}));
         }
         return trainSet;
-
     }
 
     @Override
@@ -50,9 +49,9 @@ public class StandardStrategy extends StrategyAbstract {
         double inputs[] = new double[getNnetInputLayer()];
         double outputs[] = new double[]{getNormalizedClose(days.get(todayIdx + 1).getClose())};
         
-        for (int i = 0; i < getNnetInputLayer(); i++) {
-                inputs[i] = getNormalizedClose(days.get(todayIdx-getNnetInputLayer()+1+i).getClose());
-            }
+        for (int i = 0; i < getNnetInputLayer(); i++){
+           inputs[i] = getNormalizedClose(days.get(todayIdx-getNnetInputLayer()+1+i).getClose());
+        }
          return new SupervisedTrainingElement(inputs, outputs);
     }
 }
