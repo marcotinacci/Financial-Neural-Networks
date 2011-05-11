@@ -30,12 +30,12 @@ public class Main {
    };
 
    enum Index {
-
       SP500, NASDAQ100, NIKKEI225, MIB
    };
+   
    static private Strategy STRATEGY = Strategy.rsi;
    static private LearningRule NET_LEARNING_RULE = LearningRule.TDPBackpropagation;
-   static private Index INDEX_FILE = Index.SP500;
+   static private Index INDEX_FILE = Index.MIB;
    // giorno iniziale di addestramento
    static private final int TRAIN_START = 1000;
    // numero minimo di giorni di addestramento
@@ -82,7 +82,18 @@ public class Main {
       double[] forecasts = new double[NTEST];
       double[] closes = new double[NTEST];
 
-      StrategyInterface strat = new EMAStrategy(days, lr);
+      StrategyInterface strat = null;
+      switch (STRATEGY){
+         case std:
+            strat = new StandardStrategy(days, lr);
+            break;
+         case ema:
+            strat = new EMAStrategy(days, lr);
+            break;
+         case rsi:
+            strat = new EMARSIStrategy(days, lr);
+            break;
+      }
 
       // per ogni giorno di test
       for (int i = 0; i < NTEST; i++) {
@@ -124,23 +135,6 @@ public class Main {
       DescriptiveStatistics ds = new DescriptiveStatistics(errors);
       System.out.println("Errore medio: " + ds.getMean());
 
-      /*
-       * corpo procedura generazione moti browniani
-      long[] seed = new long[6];
-      for(int i = 0; i < 3; i++){
-      seed[i] = (long)(Math.random() * 4294967087d);
-      }
-      for(int i = 0; i < 3; i++){
-      seed[i+3] = (long)(Math.random() * 4294944443d);
-      }
-      MRG32k3a.setPackageSeed(seed);
-
-      MRG32k3a rs = new MRG32k3a();
-      BrownianMotion bm = new BrownianMotion(1, 1, 1, rs);
-      bm.setObservationTimes(1, 10);
-      System.out.println("moto browniano: " + Arrays.toString(bm.generatePath()));
-       */
-
    }
 
    /**
@@ -167,7 +161,7 @@ public class Main {
       // previsione di andamento del giorno successivo
       int nextSign;
       // soglia di decisione
-      double stopLossPerc = 0.02;
+      double stopLossPerc = 2;
       // ultimo prezzo su cui abbiamo eseguito un'azione di acquisto/vendita
       double lastPrice = 0;
 
@@ -179,8 +173,10 @@ public class Main {
                  || todayCloses[i] > lastPrice + lastPrice * stopLossPerc))
          {
             stocks = money / todayCloses[i];
-            if(print) System.out.println("giorno: " + i + " compra "
+            if(print){
+               System.out.println("giorno: " + i + " compra "
                     + stocks + " azioni per " + money + "$.");
+            }
             money = 0;
             position = 1;
             lastPrice = todayCloses[i];
@@ -188,16 +184,22 @@ public class Main {
                  || todayCloses[i] < lastPrice - lastPrice * stopLossPerc))
          {
             money = stocks * todayCloses[i];
-            if(print) System.out.println("giorno: " + i + " vendi "
+            if(print){
+               System.out.println("giorno: " + i + " vendi "
                     + stocks + " azioni per " + money + "$.");
+            }
             stocks = 0;
             position = -1;
             lastPrice = todayCloses[i];
          }
-         profit[i] = money + stocks * todayCloses[todayCloses.length - 1];
+         profit[i] = money + stocks * todayCloses[i];
       }
-      if(print) System.out.println("Ricavo finale: "
+
+      if(print)
+      {
+         System.out.println("Ricavo finale: "
               + (money + stocks * todayCloses[todayCloses.length - 1]));
+      }
       return profit;
    }
 }

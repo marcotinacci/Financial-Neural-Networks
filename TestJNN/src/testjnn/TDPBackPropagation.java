@@ -5,10 +5,8 @@
 
 package testjnn;
 
-import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.neuroph.core.Neuron;
 import org.neuroph.core.learning.SupervisedTrainingElement;
-import org.neuroph.core.learning.TrainingSet;
 import org.neuroph.core.transfer.TransferFunction;
 import org.neuroph.nnet.learning.BackPropagation;
 
@@ -31,8 +29,6 @@ public class TDPBackPropagation extends BackPropagation {
    public int c3 = 0;
    public int c4 = 0;
    public int cplus;
-
-   private double sigma = 1;
 
    // TODO caso deltaT o deltaO nulli
 
@@ -80,23 +76,6 @@ public class TDPBackPropagation extends BackPropagation {
          }
          return k * w;
          }
-   }
-
-   @Override
-   public void setTrainingSet(TrainingSet trainingSet) {
-      super.setTrainingSet(trainingSet);
-
-      double targetList[] = new double[trainingSet.trainingElements().size()];
-      for(int i = 0; i < trainingSet.trainingElements().size(); i++){
-         targetList[i] =
-            ((SupervisedTrainingElement)trainingSet.trainingElements().get(i))
-            .getDesiredOutput()[0];
-      }
-
-      DescriptiveStatistics ds = new DescriptiveStatistics(targetList);
-      sigma = ds.getStandardDeviation();
-      // TODO: togliere i calcoli di sigma
-      //System.out.println("Sigma: "+sigma);
    }
 
    @Override
