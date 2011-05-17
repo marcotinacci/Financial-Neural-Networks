@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
 import org.neuroph.core.Neuron;
+import org.neuroph.core.learning.SupervisedTrainingElement;
 import org.neuroph.core.transfer.TransferFunction;
 import org.neuroph.nnet.learning.BackPropagation;
 import umontreal.iro.lecuyer.rng.MRG32k3a;
@@ -17,7 +18,9 @@ public class STEBackPropagation extends BackPropagation {
 
    private double firstClose;
    private StandardDeviation sigma = null;
-
+   private int nDays = 0;
+   private double currentValue;
+   private int previousEpoch = this.getCurrentIteration();
 
    @Override
    protected void adjustOutputNeurons(double[] patternError) {
@@ -33,16 +36,52 @@ public class STEBackPropagation extends BackPropagation {
          TransferFunction transferFunction = neuron.getTransferFunction();
          double neuronInput = neuron.getNetInput();
          // TODO
-         double mu = (currentValue - firstClose) / numerogiorni;
-         sigma.increment(currentvalue);
+         double mu = (currentValue - firstClose) / nDays;
+         sigma.increment(currentValue);
          BrownianMotion bm = getBrownianMotion(firstClose, mu, sigma.getResult());
-         double delta = itoIntegral(neuron, maxError, i, maxError)
-                 * outputError
+         double delta = itoIntegral(bm, 1, nDays, 1)
+                 *  outputError
                  * transferFunction.getDerivative(neuronInput);
          neuron.setError(delta);
          this.updateNeuronWeights(neuron);
          i++;
       } // for
+   }
+
+   @Override
+   protected void reset() {
+      super.reset();
+      sigma = null;
+      nDays = 0;
+      previousEpoch = this.getCurrentIteration();
+   }
+
+
+   @Override
+   protected void learnPattern(SupervisedTrainingElement trainingElement) {
+      /*
+       * soft reset delle variabili che si rinnovano ogni epoca
+       */
+      if(previousEpoch != getCurrentIteration()){
+         nDays = 0;
+         sigma = new StandardDeviation();
+         firstClose = trainingElement.getDesiredOutput()[0];
+      }
+      
+      sigma.increment(trainingElement.getDesiredOutput()[0]);
+      nDays++;
+      mu = (firstClose - trainingElement.getDesiredOutput()[0]) / nDays;
+
+      super.learnPattern(trainingElement);
+
+      double[] previousInput = trainingElement.getInput();
+      this.neuralNetwork.setInput(previousInput);
+      this.neuralNetwork.calculate();
+      previousOutput = this.neuralNetwork.getOutput();
+      previousDesiredOutput = trainingElement.getDesiredOutput();
+
+      counter++;
+
    }
 
    private double itoIntegral(BrownianMotion bm, double delta, int times, double tau) {

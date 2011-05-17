@@ -80,6 +80,9 @@ public class TDPBackPropagation extends BackPropagation {
 
    @Override
    protected void reset() {
+      /*
+       * hard reset delle variabili che si rinnovano ad ogni training set
+       */
       super.reset();
       previousOutput = null;
       previousDesiredOutput = null;
@@ -90,6 +93,9 @@ public class TDPBackPropagation extends BackPropagation {
 
    @Override
    protected void learnPattern(SupervisedTrainingElement trainingElement) {
+      /*
+       * soft reset delle variabili che si rinnovano ogni epoca
+       */
       if(previousEpoch != getCurrentIteration()){
          // reset contatore
          counter = 0;
