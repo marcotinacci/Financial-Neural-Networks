@@ -1,4 +1,4 @@
-package beans;
+package org.rn.financialneuralnetwork.beans;
 
 import java.util.Date;
 

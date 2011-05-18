@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package utils;
+package org.rn.financialneuralnetwork.utils;
 
 /**
  *

@@ -1,6 +1,6 @@
-package utils;
+package org.rn.financialneuralnetwork.utils;
 
-import beans.DayBean;
+import org.rn.financialneuralnetwork.beans.DayBean;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;

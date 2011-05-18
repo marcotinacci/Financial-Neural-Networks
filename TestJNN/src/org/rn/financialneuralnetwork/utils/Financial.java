@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package utils;
+package org.rn.financialneuralnetwork.utils;
 
 import java.util.LinkedList;
 import org.apache.commons.math.stat.descriptive.moment.Mean;
