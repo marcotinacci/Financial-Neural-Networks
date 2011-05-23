@@ -51,16 +51,28 @@ public class FinancialNeuralNetwork {
    static private PrintStream file = null;
 
    public static void main(String[] args) throws Exception{
-      for(Strategy s : Strategy.values()){
+      /*for(Strategy s : Strategy.values()){
          STRATEGY = s;
-         for(LearningRule lr : LearningRule.values()){
-            NET_LEARNING_RULE = lr;
-            for(Index idx : Index.values()){
-               INDEX_FILE = idx;
-               doForecast();
-            }
-         }
-      }
+            for(LearningRule lr : LearningRule.values()){
+               NET_LEARNING_RULE = lr;
+                  for(Index idx : Index.values()){
+                     INDEX_FILE = idx;
+                     if(s == Strategy.rsi){
+                        System.out.println("- "+s+","+lr+","+idx);
+                        doForecast();
+                     }
+                  }
+               }
+      }*/
+
+      NET_LEARNING_RULE = LearningRule.STEBackpropagation;
+      STRATEGY = Strategy.rsi;
+      INDEX_FILE = Index.MIB;
+      System.out.println("- "+STRATEGY+","+NET_LEARNING_RULE+","+INDEX_FILE);
+      doForecast();
+      INDEX_FILE = Index.NIKKEI225;
+      System.out.println("- "+STRATEGY+","+NET_LEARNING_RULE+","+INDEX_FILE);
+      doForecast();
    }
 
    private static void doForecast() throws Exception {
