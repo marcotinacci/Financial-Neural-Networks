@@ -16,6 +16,8 @@ import org.rn.financialneuralnetwork.utils.Normalize;
  */
 public abstract class StrategyAbstract implements StrategyInterface {
 
+   protected static final boolean DIRECTION_FORECAST = true;
+
    protected List<DayBean> days;
    protected LearningRule learningRule;
    protected double min;

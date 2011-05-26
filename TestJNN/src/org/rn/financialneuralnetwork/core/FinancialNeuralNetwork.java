@@ -143,6 +143,31 @@ public class FinancialNeuralNetwork {
         CSVHandler.writeArray(v, "data/" + INDEX_FILE.name()
                 + "_" + STRATEGY.name() + "_" + NET_LEARNING_RULE.name() + ".csv");
 
+        /*
+      // vettore dei profitti
+      double dailyProfit[];
+      // simula la valutazione del profitto finale con la nostra strategia decisionale
+      dailyProfit = evaluateProfit2(forecasts, closes, true);
+      // dati da stampare sul CSV
+      double[][] v = new double[3][];
+      // vettore delle chiusure reali
+      v[0] = new double[closes.length];
+      for(int i = 0; i < v[0].length; i++){
+         v[0][i] = (days.get(i + TRAIN_START + NTRAIN).getClose() -
+            days.get(i + TRAIN_START + NTRAIN+1).getClose()) > 0 ? 0d : 1d;
+      }
+      // vettore delle previsioni
+      v[1] = new double[closes.length];
+      for(int i = 0; i < v[0].length; i++){
+         v[1][i] = forecasts[i] < 0.5d ? 0d : 1d;
+      }
+      // vettore dei profitti
+      v[2] = dailyProfit;
+      // stampa su file CSV le previsioni incrementali, i valori reali e i profitti
+      CSVHandler.writeArray(v, "data/dir_" + INDEX_FILE.name()
+              + "_" + STRATEGY.name() + "_" + NET_LEARNING_RULE.name() + ".csv");
+*/
+
         // calcola l'errore commesso come media degli errori relativi commessi a ogni chiusura
         double[] errors = new double[NTEST];
         for (int i = 1; i < NTEST; i++) {
@@ -230,4 +255,57 @@ public class FinancialNeuralNetwork {
         }
         return profit;
     }
+
+
+   private static double[] evaluateProfit2(double[] tomorrowForecasts,
+           double[] todayCloses, boolean print) {
+
+      // lista dei profitti giornalieri
+      double profit[] = new double[tomorrowForecasts.length];
+
+      // numero di azioni possedute
+      double stocks = 0;
+      // capitale iniziale
+      double money = 1000000;
+      // posizione di acquisto (+1) o vendita (-1)
+      int position = -1;
+
+      for (int i = 0; i < tomorrowForecasts.length; i++) {
+         boolean buy = tomorrowForecasts[i] < 0.5 ? false : true;
+         // decisione
+         if (position == -1 && buy)
+         {
+            stocks = money / todayCloses[i];
+            if(print){
+               System.out.println("giorno: " + i + " compra "
+                    + stocks + " azioni per " + money + "$.");
+               file.println("giorno: " + i + " compra "
+                    + stocks + " azioni per " + money + "$.");
+            }
+            money = 0;
+            position = 1;
+         } else if (position == 1 && !buy)
+         {
+            money = stocks * todayCloses[i];
+            if(print){
+               System.out.println("giorno: " + i + " vendi "
+                    + stocks + " azioni per " + money + "$.");
+               file.println("giorno: " + i + " vendi "
+                    + stocks + " azioni per " + money + "$.");
+            }
+            stocks = 0;
+            position = -1;
+         }
+         profit[i] = money + stocks * todayCloses[i];
+      }
+
+      if(print)
+      {
+         System.out.println("Ricavo finale: "
+              + (money + stocks * todayCloses[todayCloses.length - 1]));
+         file.println("Ricavo finale: "
+              + (money + stocks * todayCloses[todayCloses.length - 1]));
+      }
+      return profit;
+   }
 }

@@ -10,7 +10,6 @@ import java.util.List;
 import org.neuroph.core.learning.LearningRule;
 import org.neuroph.core.learning.SupervisedTrainingElement;
 import org.neuroph.core.learning.TrainingSet;
-import org.rn.financialneuralnetwork.strategies.StrategyAbstract;
 import org.rn.financialneuralnetwork.utils.Financial;
 
 /**
@@ -18,6 +17,8 @@ import org.rn.financialneuralnetwork.utils.Financial;
  * @author fcanovai
  */
 public class EMARSIStrategy extends StrategyAbstract {
+
+    
 
     private static final int EMA_STEP = 5;
     private static final int RSI_SIZE = 14;
@@ -58,16 +59,31 @@ public class EMARSIStrategy extends StrategyAbstract {
             }
 
             // aggiungi l'input e l'output
-            trainSet.addElement(new SupervisedTrainingElement(
+            if(DIRECTION_FORECAST){
+               trainSet.addElement(new SupervisedTrainingElement(
+                    v, new double[]{getDirForecastOutput(idx)}));
+            }else{
+               trainSet.addElement(new SupervisedTrainingElement(
                     v, new double[]{normalizedDays[idx + 1]}));
+            }
         }
         return trainSet;
+    }
+
+    private double getDirForecastOutput(int idx){
+       return (days.get(idx).getClose() - days.get(idx+1).getClose()) > 0 ?
+          0d : 1d;
     }
 
     @Override
     public SupervisedTrainingElement getTestElement(int todayIdx) {
         double inputs[] = new double[getNnetInputLayer()];
-        double outputs[] = new double[]{getNormalizedClose(days.get(todayIdx + 1).getClose())};
+        double outputs[];
+        if(DIRECTION_FORECAST){
+           outputs = new double[]{getDirForecastOutput(todayIdx)};
+        }else{
+           outputs = new double[]{getNormalizedClose(days.get(todayIdx + 1).getClose())};
+        }
 
         //il primo input è la chiusura del giorno
         inputs[0] = getNormalizedClose(days.get(todayIdx).getClose());
