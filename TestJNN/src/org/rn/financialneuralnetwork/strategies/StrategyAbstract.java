@@ -4,9 +4,12 @@ import org.rn.financialneuralnetwork.beans.DayBean;
 import java.util.ArrayList;
 import java.util.List;
 import org.neuroph.core.NeuralNetwork;
+import org.neuroph.core.Neuron;
 import org.neuroph.core.learning.LearningRule;
 import org.neuroph.core.learning.SupervisedTrainingElement;
 import org.neuroph.core.learning.TrainingSet;
+import org.neuroph.core.transfer.Linear;
+import org.neuroph.core.transfer.TransferFunction;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.rn.financialneuralnetwork.utils.Normalize;
 
@@ -16,7 +19,7 @@ import org.rn.financialneuralnetwork.utils.Normalize;
  */
 public abstract class StrategyAbstract implements StrategyInterface {
 
-   protected static final boolean DIRECTION_FORECAST = true;
+   protected static final boolean DIRECTION_FORECAST = false;
 
    protected List<DayBean> days;
    protected LearningRule learningRule;
@@ -85,6 +88,9 @@ public abstract class StrategyAbstract implements StrategyInterface {
       NeuralNetwork nnet = new MultiLayerPerceptron(nnetInputLayer,
               nnetHiddenLayer, nnetOutputLayer);
       nnet.setLearningRule(learningRule);
+//      for(Neuron n : nnet.getOutputNeurons()){
+//         n.setTransferFunction(new Linear());
+//      }
       return nnet;
    }
 
@@ -111,12 +117,10 @@ public abstract class StrategyAbstract implements StrategyInterface {
       return normalizedDays;
    }
 
-   @Override
    public double getDenormalizedClose(double closeValue) {
       return Normalize.denormalize(closeValue, min, max, MIN_RANGE, MAX_RANGE);
    }
 
-   @Override
    public double getNormalizedClose(double closeValue) {
       return Normalize.normalize(closeValue, min, max, MIN_RANGE, MAX_RANGE);
    }

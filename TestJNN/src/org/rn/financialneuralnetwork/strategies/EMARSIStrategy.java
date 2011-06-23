@@ -83,6 +83,7 @@ public class EMARSIStrategy extends StrategyAbstract {
            outputs = new double[]{getDirForecastOutput(todayIdx)};
         }else{
            outputs = new double[]{getNormalizedClose(days.get(todayIdx + 1).getClose())};
+           //outputs = new double[]{days.get(todayIdx + 1).getClose()};
         }
 
         //il primo input è la chiusura del giorno

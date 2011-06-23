@@ -1,6 +1,7 @@
 package org.rn.financialneuralnetwork.learningRules;
 
 import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
+import org.neuroph.core.Connection;
 import org.neuroph.core.Neuron;
 import org.neuroph.core.learning.SupervisedTrainingElement;
 import org.neuroph.core.transfer.TransferFunction;
@@ -78,22 +79,15 @@ public class STEBackPropagation extends BackPropagation {
    private double itoIntegral(BrownianMotion bm, double delta, int times, double tau) {
       bm.setObservationTimes(delta, times);
 
-
       double path[] = bm.generatePath();
-
-
       double sum = 0;
 
-
-      for (int i = 0; i
-              < path.length - 1; i++) {
-         sum += path[i + 1] - path[i];
-
-
-      }
+      //for (int i = 0; i < path.length - 1; i++) {
+      //   sum += path[i + 1] - path[i];
+      //}
+      sum = path[path.length - 1] - path[0];
       return (1. / tau) * Math.exp(bm.getSigma() * sum
               + (times - 1) * Math.abs(bm.getMu()));
-
 
    }
 
@@ -107,23 +101,13 @@ public class STEBackPropagation extends BackPropagation {
    private BrownianMotion getBrownianMotion(double initValue, double mu,
            double sigma) {
       long[] seed = new long[6];
-
-
-      for (int i = 0; i
-              < 3; i++) {
+      for (int i = 0; i < 3; i++) {
          seed[i] = (long) (Math.random() * 4294967087d);
-
-
       }
-      for (int i = 0; i
-              < 3; i++) {
+      for (int i = 0; i< 3; i++) {
          seed[i + 3] = (long) (Math.random() * 4294944443d);
-
-
       }
       return getBrownianMotion(initValue, mu, sigma, seed);
-
-
    }
 
    /**
@@ -144,4 +128,26 @@ public class STEBackPropagation extends BackPropagation {
       return new BrownianMotion(initValue, mu, sigma, rs);
 
    }
+
+   @Override
+   protected void updateNeuronWeights(Neuron neuron) {
+        // get the error for specified neuron,
+        double neuronError = Math.tanh(neuron.getError());
+
+        // tanh can be used to minimise the impact of big error values, which can cause network instability
+        // suggested at https://sourceforge.net/tracker/?func=detail&atid=1107579&aid=3130561&group_id=238532
+        // double neuronError = Math.tanh(neuron.getError());
+
+        // iterate through all neuron's input connections
+        for (Connection connection : neuron.getInputConnections()) {
+            // get the input from current connection
+            double input = connection.getInput();
+            // calculate the weight change
+            double deltaWeight = this.learningRate * neuronError * input;
+            // update the weight change
+            this.applyWeightChange(connection.getWeight(), deltaWeight);
+        }
+   }
+
+
 }

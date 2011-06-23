@@ -27,20 +27,4 @@ public interface StrategyInterface {
     * @return input e target incapsulati in un SupervisedTrainingElement
     */
    public SupervisedTrainingElement getTestElement(int todayIdx);
-
-   /**
-    * Metodo che denormalizza un valore di chiusura rispetto alla strategia
-    * utilizzata
-    * @param closeValue valore di chiusura normalizzato
-    * @return valore di chiusura denormalizzato
-    */
-   public double getDenormalizedClose(double closeValue);
-
-   /**
-    * Metodo che normalizza un valore di chiusura rispetto alla strategia
-    * utilizzata
-    * @param closeValue valore di chiusura denormalizzato
-    * @return valore di chiusura normalizzato
-    */
-   public double getNormalizedClose(double closeValue);
 }

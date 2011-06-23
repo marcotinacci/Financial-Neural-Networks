@@ -53,19 +53,30 @@ public class FinancialNeuralNetwork {
     static private PrintStream file = null;
 
     public static void main(String[] args) throws Exception {
+       STRATEGY = Strategy.rsi;
+       NET_LEARNING_RULE = LearningRule.STEBackpropagation;
+       INDEX_FILE = Index.SP500;
+       doForecast();
+
+       STRATEGY = Strategy.std;
+       NET_LEARNING_RULE = LearningRule.STEBackpropagation;
+       INDEX_FILE = Index.SP500;
+       doForecast();
+
+       /*
      for(Strategy s : Strategy.values()){
          STRATEGY = s;
-            for(LearningRule lr : LearningRule.values()){
-               NET_LEARNING_RULE = lr;
-                  for(Index idx : Index.values()){
-                     INDEX_FILE = idx;
-                     if(s == Strategy.rsi){
-                        System.out.println("- "+s+","+lr+","+idx);
-                        doForecast();
-                     }
-                  }
+         for(LearningRule lr : LearningRule.values()){
+            NET_LEARNING_RULE = lr;
+            for(Index idx : Index.values()){
+               INDEX_FILE = idx;
+               if(s == Strategy.rsi){
+                  System.out.println("- "+s+","+lr+","+idx);
+                  doForecast();
                }
-      }
+            }
+         }
+      }*/
     }
 
     private static void doForecast() throws Exception {
@@ -119,7 +130,7 @@ public class FinancialNeuralNetwork {
             // calcola l'output
             nnet.calculate();
             // estrai e denormalizza l'i-esimo output di previsione
-            forecasts[i] = strat.getDenormalizedClose(nnet.getOutput()[0]);
+            forecasts[i] = ((StrategyAbstract)strat).getDenormalizedClose(nnet.getOutput()[0]);
             // estrai l'effettivo valore della chiusura dell'i-esima giornata
             closes[i] = days.get(i + TRAIN_START + NTRAIN).getClose();
             // stampa la previsione fatta il giorno i (per la chiusura del giorno i+1)
