@@ -25,8 +25,8 @@ public abstract class StrategyAbstract implements StrategyInterface {
    protected LearningRule learningRule;
    protected double min;
    protected double max;
-   public static final double MIN_RANGE = 0.1;
-   public static final double MAX_RANGE = 0.9;
+   public static final double MIN_RANGE = 0.3;
+   public static final double MAX_RANGE = 0.7;
    private int nnetOutputLayer;
    private int nnetInputLayer;
    private int nnetHiddenLayer;
