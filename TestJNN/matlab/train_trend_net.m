@@ -22,8 +22,7 @@ end
 
 % size(T) = SNxQ2 -> (output_neurons x test_num)
 for i=1:test_num
-    T(:,i) = [sign(fts(begin_idx+i+1)-fts(begin_idx+i)); sign(fts(begin_idx+i+2)-fts(begin_idx+i)); ...
-        sign(fts(begin_idx+i+3)-fts(begin_idx+i)); sign(fts(begin_idx+i+4)-fts(begin_idx+i)); sign(fts(begin_idx+i+5)-fts(begin_idx+i))];
+    T(:,i) = [sign(fts(begin_idx+i+1)-fts(begin_idx+i))];
 end
 
 %% addestramento
