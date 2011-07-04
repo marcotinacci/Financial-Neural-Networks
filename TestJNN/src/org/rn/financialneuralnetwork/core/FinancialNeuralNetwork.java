@@ -42,9 +42,12 @@ public class FinancialNeuralNetwork {
         NIKKEI225,
         MIB
     };
+    
     static private Strategy STRATEGY = Strategy.rsi;
     static private LearningRule NET_LEARNING_RULE = LearningRule.STEBackpropagation;
     static private Index INDEX_FILE = Index.NASDAQ100;
+
+
     // giorno iniziale di addestramento
     static private final int TRAIN_START = 0;
     // numero minimo di giorni di addestramento
@@ -53,14 +56,6 @@ public class FinancialNeuralNetwork {
     static private PrintStream file = null;
 
     public static void main(String[] args) throws Exception {
-       STRATEGY = Strategy.rsi;
-       NET_LEARNING_RULE = LearningRule.STEBackpropagation;
-       INDEX_FILE = Index.SP500;
-       doForecast();
-
-       STRATEGY = Strategy.std;
-       NET_LEARNING_RULE = LearningRule.STEBackpropagation;
-       INDEX_FILE = Index.SP500;
        doForecast();
 
        /*

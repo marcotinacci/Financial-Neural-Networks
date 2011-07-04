@@ -1,12 +1,12 @@
 vet = randperm(973);
 vet = vet + 27;
-pippo = vet(1:773);
+train_var = vet(1:773);
 test = vet(774:973);
 t_count=0
 t_sim = zeros(1,200);
 for i=1:100
     i
-    [count sim_out fts] = forecast_plot(pippo, test);
+    [count sim_out fts] = forecast_plot(train_var, test);
     t_count = t_count + count;
     t_sim = t_sim + sim_out;
 end

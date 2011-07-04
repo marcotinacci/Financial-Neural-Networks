@@ -40,35 +40,6 @@ M(2,3) = showresults('SP500','rsi','STEBackpropagation');
 
 
 M
-% 
-% showresults('NASDAQ100','std','Backpropagation');
-% showresults('NIKKEI225','std','Backpropagation');
-% showresults('MIB','std','Backpropagation');
-% 
-% 
-% showresults('NASDAQ100','rsi','Backpropagation');
-% showresults('NIKKEI225','rsi','Backpropagation');
-% showresults('MIB','rsi','Backpropagation');
-% 
-% 
-% showresults('NASDAQ100','std','TDPBackpropagation');
-% showresults('NIKKEI225','std','TDPBackpropagation');
-% showresults('MIB','std','TDPBackpropagation');
-% 
-% 
-% showresults('NASDAQ100','rsi','TDPBackpropagation');
-% showresults('NIKKEI225','rsi','TDPBackpropagation');
-% showresults('MIB','rsi','TDPBackpropagation');
-% 
-% 
-% showresults('NASDAQ100','std','STEBackpropagation');
-% showresults('NIKKEI225','std','STEBackpropagation');
-% showresults('MIB','std','STEBackpropagation');
-% 
-% 
-% showresults('NASDAQ100','rsi','STEBackpropagation');
-% showresults('NIKKEI225','rsi','STEBackpropagation');
-% showresults('MIB','rsi','STEBackpropagation');
 
 
 end

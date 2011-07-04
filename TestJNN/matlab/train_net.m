@@ -1,4 +1,4 @@
-function net = train_net(fts, rsi, ema5, ema10, ema15, ema20, pippo)
+function net = train_net(fts, rsi, ema5, ema10, ema15, ema20, train_var)
 
 %% parametri
 
@@ -16,11 +16,13 @@ begin_idx = 26;
 
 i = 1;
 for j=1:test_num
-    if(ismember(j,pippo) == 1)
+    if(ismember(j,train_var) == 1)
         P(:,i) = [fts(j); fts(j-1);fts(j-2);fts(j-3);fts(j-4); rsi(j); ema5(j); ...
             ema10(j); ema15(j); ema20(j)];
-            %macdline(begin_idx+i);nineperma(begin_idx+i)];
-        T(:,i) = [sign(fts(j+5)-fts(j))]; 
+        T(:,i) = [sign(fts(j+1)-fts(j))];
+        %T(:,i) = [sign(fts(j+5)-fts(j))];
+        %T(:,i) = [fts(j+1)];
+        %T(:,i) = [fts(j+5)];
         i = i+1;
     end
 end

@@ -17,7 +17,7 @@ function r = showresults(financial_index, strategy, learning_rule)
 %     end
 %     data=vars{1};
 %     data=flipud(data);
-    result=importdata(['../data/0307',financial_index,'_',strategy, ...
+    result=importdata(['../data/',financial_index,'_',strategy, ...
         '_',learning_rule,'.csv']);
     result=result';
     
@@ -63,7 +63,7 @@ function r = showresults(financial_index, strategy, learning_rule)
      plot(1:n_test+1,[result(1 : n_test, 1); NaN],'-g');
      plot(1:n_test+1,[NaN; result(1 : n_test, 2)],'.b');
      legend('Dati reali','Previsioni simulazione');
-     saveas(gcf,['imgs/0307',financial_index,'_',strategy,'_',learning_rule,'_forecast.eps'],'psc2');
+     saveas(gcf,['imgs/',financial_index,'_',strategy,'_',learning_rule,'_forecast.eps'],'psc2');
      %title([financial_index,' ',strategy,' ',learning_rule, ...
      %   ' - Grafico previsioni puntuali']);
 %     
